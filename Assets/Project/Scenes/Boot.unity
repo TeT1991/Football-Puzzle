@@ -151,6 +151,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbd2baf079efb5a4fb1adcc16e647c73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _skinsCatalog: {fileID: 11400000, guid: 0ed3ece57132aae45a5f6adfc1d5ff4e, type: 2}
 --- !u!4 &854476386
 Transform:
   m_ObjectHideFlags: 0

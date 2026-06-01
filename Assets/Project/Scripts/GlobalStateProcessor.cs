@@ -5,6 +5,11 @@ public class GlobalStateProcessor : MonoBehaviour
 {
     private IGlobalGameStateService _gloabalGameStateService;
 
+    public void OnDestroy()
+    {
+        _gloabalGameStateService.GlobalStateChanged -= ProcessGlobalGameState;
+    }
+
     public void Init()
     {
         DontDestroyOnLoad(gameObject);

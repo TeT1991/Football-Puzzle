@@ -1,14 +1,36 @@
 using System;
+using UnityEngine;
 
 public class SkinService : ISkinService
 {
-    private int _skinId;
+    private SkinsCatalog _catalog;
+    private int _curentSkinId;
 
-    public event Action SkinChanged;
+    public event Action<int> SkinChanged;
 
-    public void ChangeSkin(int id)
+    public SkinService (SkinsCatalog catalog)
     {
-        _skinId = id;
-        SkinChanged?.Invoke();
+        _catalog = catalog;
+    }
+    public string GetCurrent()
+    {
+        return _catalog.GetById(_curentSkinId).Name;
+    }
+
+    public bool IsUnlocked(int id)
+    {
+        return _catalog.GetById(_curentSkinId).IsLocked;
+    }
+
+    public void SetCurrent(int id)
+    {
+        _curentSkinId = id;
+        string skinIdname = "SkinId";
+        PlayerPrefs.SetInt(skinIdname, _curentSkinId);
+    }
+
+    public void Unlock(int id)
+    {
+        _catalog.GetById(_curentSkinId).Unlock();
     }
 }
