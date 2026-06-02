@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using YG;
 
 public class GameBootstrap : MonoBehaviour
 {
@@ -7,13 +9,24 @@ public class GameBootstrap : MonoBehaviour
     [SerializeField] private GlobalStateProcessor _globalStateProcessor;
     [SerializeField] private int _initialSkinId = 0;
 
-    private SkinService _skinService;
     private SaveService _saveService;
+    private SkinService _skinService;
     private GlobalGameStateService _gloabalGameStateService;
 
     private void Awake()
     {
-        CreateServices();
+        YG2.onGetSDKData += OnPYG2Initialized;
+    }
+
+    private void OnPYG2Initialized()
+    {
+        if (YG2.isSDKEnabled)
+        {
+            YG2.onGetSDKData -= OnPYG2Initialized;
+        }
+
+        Debug.Log("PYG Initialized");
+
         RegisterServices();
 
         InitCurrentSkin();
@@ -23,23 +36,26 @@ public class GameBootstrap : MonoBehaviour
         SceneManager.LoadScene(mainSceneName);
     }
 
-    private void CreateServices()
-    {
-        _gloabalGameStateService = new();
-        _skinService = new(_skinsCatalog);
-        _saveService = new(_initialSkinId);
-    }
-
     private void RegisterServices()
     {
-        ServiceLocator.Register<ISkinService>(_skinService);
+        _saveService = new(_initialSkinId);
         ServiceLocator.Register<ISaveService>(_saveService);
+
+        _skinService = new(_skinsCatalog);
+        ServiceLocator.Register<ISkinService>(_skinService);
+
+        _gloabalGameStateService = new();
         ServiceLocator.Register<IGlobalGameStateService>(_gloabalGameStateService);
     }
 
     private void InitCurrentSkin()
     {
         int currentSkinId = _saveService.CurrentSkinId;
-        _skinService.SetCurrent(currentSkinId);
+        _skinService.TrySetCurrent(currentSkinId);
+    }
+
+    private void OnDestroy()
+    {
+        YG2.onGetSDKData -= OnPYG2Initialized;
     }
 }

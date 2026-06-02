@@ -6,5 +6,5 @@ public interface ISkinService : IService
     int GetCurrent();
     bool IsUnlocked(int id);
     void Unlock(int id);
-    void SetCurrent(int id);
+    void TrySetCurrent(int id);
 };

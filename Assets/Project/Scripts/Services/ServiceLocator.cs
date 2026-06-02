@@ -24,6 +24,6 @@ public static class ServiceLocator
             return (T)_services[typeof(T)];
         }
 
-        throw new InvalidOperationException("Service not EXIST");
+        throw new InvalidOperationException("Service " + (typeof(T)) + " not EXIST");
     }
 }

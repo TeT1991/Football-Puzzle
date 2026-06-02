@@ -2,16 +2,16 @@ using System;
 
 public class SkinService : ISkinService
 {
+    private readonly ISaveService _saveService;
+
     private SkinsCatalog _catalog;
     private int _curentSkinId;
 
-    private ISaveService _saveService;
-
     public event Action<int> SkinChanged;
 
-    public SkinService (SkinsCatalog catalog)
+    public SkinService(SkinsCatalog catalog)
     {
-        _saveService = ServiceLocator.Get<ISaveService> ();
+        _saveService = ServiceLocator.Get<ISaveService>();
         _curentSkinId = _saveService.CurrentSkinId;
         _catalog = catalog;
     }
@@ -25,13 +25,18 @@ public class SkinService : ISkinService
         return _saveService.IsSkinUnlocked(id);
     }
 
-    public void SetCurrent(int id)
+    public void TrySetCurrent(int id)
     {
-        _saveService.SaveCurrentSkin(id);
+        if (id == _curentSkinId)
+        {
+            return;
+        }
+        _curentSkinId = id;
+        _saveService.SaveCurrentSkin(_curentSkinId);
     }
 
     public void Unlock(int id)
     {
-       _saveService.SaveUnlockedSkin(id);
+        _saveService.SaveUnlockedSkin(id);
     }
 }

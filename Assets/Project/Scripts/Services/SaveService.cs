@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using UnityEngine;
 using YG;
 
 public class SaveService : ISaveService
@@ -50,12 +52,14 @@ public class SaveService : ISaveService
 
     public void SaveUnlockedSkin(int id)
     {
-        if (_saveData.UnlockedSkins.Contains(id))
+        if (_saveData.UnlockedSkins.Contains(id) == false)
         {
-            throw new System.Exception("Skin Already unlocked");
+            _saveData.UnlockedSkins.Add(id);
+            Save();
         }
-
-        _saveData.UnlockedSkins.Add(id);
-        Save();
+        else
+        {
+           UnityEngine.Debug.Log($"skin {id} akready Exist");
+        }
     }
 }
