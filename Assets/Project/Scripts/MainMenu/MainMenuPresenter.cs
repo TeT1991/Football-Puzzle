@@ -1,18 +1,19 @@
 using System;
-using UnityEngine;
 
 public class MainMenuPresenter : IDisposable
 {
     private readonly MainMenuUIView _mainMenuUIView;
     private readonly SkinsShopUIView _skinsShopUIView;
     private readonly IGlobalGameStateService _globalStateGameService;
+    private readonly ISkinService _skinService;
 
-    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView)
+    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView, ISkinService skinService)
     {
         _mainMenuUIView = mainMenuView;
         _mainMenuUIView.Init();
         _skinsShopUIView = skinsShopUIView;
         _skinsShopUIView.Init();
+        _skinService = skinService;
 
 
         _globalStateGameService = ServiceLocator.Get<IGlobalGameStateService>();
@@ -31,6 +32,8 @@ public class MainMenuPresenter : IDisposable
     {
         _mainMenuUIView.gameObject.SetActive(false);
         _skinsShopUIView.gameObject.SetActive(true);
+
+        _skinsShopUIView.CreateItems(_skinService.GetDatas());
     }
 
     private void OnSkinShopButtonCloseClicked()

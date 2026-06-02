@@ -1,15 +1,18 @@
 using System;
+using System.Collections.Generic;
 
 public class SkinService : ISkinService
 {
     private readonly ISaveService _saveService;
+    private readonly SkinsCatalog _catalog;
 
-    private SkinsCatalog _catalog;
     private int _curentSkinId;
 
     public event Action<int> SkinChanged;
 
-    public SkinService(SkinsCatalog catalog)
+    public int SkinsCount => _catalog.Catalog.Count;
+
+    public SkinService(ISaveService saveService,SkinsCatalog catalog)
     {
         _saveService = ServiceLocator.Get<ISaveService>();
         _curentSkinId = _saveService.CurrentSkinId;
@@ -38,5 +41,23 @@ public class SkinService : ISkinService
     public void Unlock(int id)
     {
         _saveService.SaveUnlockedSkin(id);
+    }
+
+    public IReadOnlyList<ShopItemData> GetDatas()
+    {
+        List<ShopItemData> datas = new();
+        ShopItemData data;
+
+        foreach (SkinDefinition skin in _catalog.Catalog)
+        {
+            int id = skin.ID;
+            int price = skin.Price;
+            bool isUnlocked = _saveService.IsSkinUnlocked(id);
+            data = new(id, price, isUnlocked);
+            datas.Add(data);
+        }
+
+        return datas;
+
     }
 }

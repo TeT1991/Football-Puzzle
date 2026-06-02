@@ -41,7 +41,7 @@ public class GameBootstrap : MonoBehaviour
         _saveService = new(_initialSkinId);
         ServiceLocator.Register<ISaveService>(_saveService);
 
-        _skinService = new(_skinsCatalog);
+        _skinService = new(_saveService,_skinsCatalog);
         ServiceLocator.Register<ISkinService>(_skinService);
 
         _gloabalGameStateService = new();
