@@ -4,6 +4,8 @@ using UnityEngine.SceneManagement;
 public class GameBootstrap : MonoBehaviour
 {
     [SerializeField] private SkinsCatalog _skinsCatalog;
+    [SerializeField] private GlobalStateProcessor _globalStateProcessor;
+    [SerializeField] private int _initialSkinId = 0;
 
     private SkinService _skinService;
     private SaveService _saveService;
@@ -14,7 +16,8 @@ public class GameBootstrap : MonoBehaviour
         CreateServices();
         RegisterServices();
 
-        SetInitialSkin();
+        InitCurrentSkin();
+        _globalStateProcessor.Init();
 
         string mainSceneName = "MainMenu";
         SceneManager.LoadScene(mainSceneName);
@@ -24,7 +27,7 @@ public class GameBootstrap : MonoBehaviour
     {
         _gloabalGameStateService = new();
         _skinService = new(_skinsCatalog);
-        _saveService = new();
+        _saveService = new(_initialSkinId);
     }
 
     private void RegisterServices()
@@ -34,17 +37,9 @@ public class GameBootstrap : MonoBehaviour
         ServiceLocator.Register<IGlobalGameStateService>(_gloabalGameStateService);
     }
 
-    private void SetInitialSkin()
+    private void InitCurrentSkin()
     {
-        string skinIdname = "SkinId";
-        if (PlayerPrefs.HasKey(skinIdname))
-        {
-            int id = PlayerPrefs.GetInt(skinIdname);
-            _skinService.SetCurrent(id);
-        }
-        else
-        {
-            _skinService.SetCurrent(0);
-        }
+        int currentSkinId = _saveService.CurrentSkinId;
+        _skinService.SetCurrent(currentSkinId);
     }
 }

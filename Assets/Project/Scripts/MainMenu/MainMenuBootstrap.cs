@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class MainMenuBootstrap : MonoBehaviour
 {
-    [SerializeField] private GlobalStateProcessor _globalStateProcessor;
     [SerializeField] private MainMenuUIView _mainMenuUIView;
     [SerializeField] private SkinsShopUIView _skinsShopUIView;
 
@@ -15,7 +14,6 @@ public class MainMenuBootstrap : MonoBehaviour
     private void Awake()
     {
         _disposables = new();
-        _globalStateProcessor.Init();
         _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView);
         _disposables.Add(_mainMenuPresenter);
     }

@@ -1,16 +1,61 @@
-using UnityEngine;
+using YG;
 
 public class SaveService : ISaveService
 {
-    private readonly string _skinIdName = "SkinID";
+    private SaveData _saveData;
 
-    public void SaveSkinId (int value)
+    public SaveService(int initialSkinId)
     {
-        PlayerPrefs.SetInt(_skinIdName, value);
+        if(YG2.saves.Data == null)
+        {
+            _saveData = SaveData.CreateNew();
+            Save();
+            SaveCurrentSkin(initialSkinId);
+            SaveUnlockedSkin(initialSkinId);
+        }
+        else
+        {
+            Load();
+        }
     }
 
-    public int LoadSkinId()
+    public int CurrentSkinId => _saveData.CurrentSkinId;
+
+    public bool IsSkinUnlocked(int id)
     {
-        return PlayerPrefs.GetInt(_skinIdName);
+        if (_saveData.UnlockedSkins.Contains(id))
+        {
+            return true;
+        }
+        
+        return false;
+    }
+
+    public void Load()
+    {
+        _saveData = YG2.saves.Data;
+    }
+
+    public void Save()
+    {
+        YG2.saves.Data = _saveData;
+        YG2.SaveProgress();
+    }
+
+    public void SaveCurrentSkin(int id)
+    {
+        _saveData.CurrentSkinId = id;
+        Save();
+    }
+
+    public void SaveUnlockedSkin(int id)
+    {
+        if (_saveData.UnlockedSkins.Contains(id))
+        {
+            throw new System.Exception("Skin Already unlocked");
+        }
+
+        _saveData.UnlockedSkins.Add(id);
+        Save();
     }
 }
