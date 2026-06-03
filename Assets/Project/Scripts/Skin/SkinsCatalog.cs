@@ -10,6 +10,15 @@ public class SkinsCatalog : ScriptableObject
 
     public SkinDefinition GetById (int id)
     {
-        return _catalog[id];
+
+        foreach (SkinDefinition skin in _catalog)
+        {
+            if (skin.ID == id)
+            {
+                return skin;
+            }
+        }
+
+        throw new System.Exception($"Skin id {id} not found");
     }
 }

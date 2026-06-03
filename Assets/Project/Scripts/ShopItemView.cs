@@ -9,6 +9,7 @@ public class ShopItemView : MonoBehaviour
     [SerializeField] private Button _buyButton;
     [SerializeField] private TextMeshProUGUI _priceText;
     [SerializeField] private TextMeshProUGUI _skinSprite; //потом поменять на спрайт
+    [SerializeField] private RectTransform _markAsSelectedObject;
 
     private int _id;
     private float _price;
@@ -32,6 +33,17 @@ public class ShopItemView : MonoBehaviour
 
         _skinButton.onClick.AddListener(OnSkinButtonClicked);
         _buyButton.onClick.AddListener(OnBuyButtonClicked);
+
+    }
+
+    public void ShowSelectedMark()
+    {
+        _markAsSelectedObject.gameObject.SetActive(true);
+    }
+
+    public void HideSelectedMark()
+    {
+        _markAsSelectedObject.gameObject.SetActive(false);
     }
 
     private void OnBuyButtonClicked()

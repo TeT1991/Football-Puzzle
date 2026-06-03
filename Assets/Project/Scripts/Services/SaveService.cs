@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using UnityEngine;
 using YG;
 
 public class SaveService : ISaveService
@@ -22,6 +20,19 @@ public class SaveService : ISaveService
     }
 
     public int CurrentSkinId => _saveData.CurrentSkinId;
+
+    public int GetCurrencyCount(CurrencyTypes type)
+    {
+        if (type == CurrencyTypes.Soft)
+        {
+            return _saveData.SofCurrency;
+        }
+
+        else
+        {
+            return _saveData.HardCurrency;
+        }
+    }
 
     public bool IsSkinUnlocked(int id)
     {

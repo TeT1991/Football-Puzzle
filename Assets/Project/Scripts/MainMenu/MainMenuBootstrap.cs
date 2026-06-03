@@ -8,6 +8,7 @@ public class MainMenuBootstrap : MonoBehaviour
     [SerializeField] private SkinsShopUIView _skinsShopUIView;
 
     private ISkinService _skinService;
+    private IGlobalGameStateService _globalGameStateService;
 
     private List<IDisposable> _disposables;
 
@@ -16,11 +17,12 @@ public class MainMenuBootstrap : MonoBehaviour
     private void Awake()
     {
         _skinService = ServiceLocator.Get<ISkinService>();
-        _disposables = new();
-        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService);
-        _disposables.Add(_mainMenuPresenter);
+        _skinService.Unlock(1);
 
-        _skinsShopUIView.Init();
+        _globalGameStateService = ServiceLocator.Get<IGlobalGameStateService>();
+        _disposables = new();
+        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService, _globalGameStateService);
+        _disposables.Add(_mainMenuPresenter);
     }
 
     private void OnDestroy()

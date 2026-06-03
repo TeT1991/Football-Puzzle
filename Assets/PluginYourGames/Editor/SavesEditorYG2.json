@@ -7,11 +7,14 @@
         false,
         false
     ],
-    "idSave": 3,
+    "idSave": 24,
     "Data": {
+        "SofCurrency": 0,
+        "HardCurrency": 0,
         "CurrentSkinId": 0,
         "UnlockedSkins": [
-            0
+            0,
+            1
         ]
     }
 }

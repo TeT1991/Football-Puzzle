@@ -14,7 +14,7 @@ public class SkinService : ISkinService
 
     public SkinService(ISaveService saveService,SkinsCatalog catalog)
     {
-        _saveService = ServiceLocator.Get<ISaveService>();
+        _saveService = saveService;
         _curentSkinId = _saveService.CurrentSkinId;
         _catalog = catalog;
     }
@@ -36,6 +36,7 @@ public class SkinService : ISkinService
         }
         _curentSkinId = id;
         _saveService.SaveCurrentSkin(_curentSkinId);
+        SkinChanged?.Invoke(_curentSkinId);
     }
 
     public void Unlock(int id)

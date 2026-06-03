@@ -5,4 +5,5 @@ public interface ISaveService : IService
 
     void SaveCurrentSkin(int id);
     void SaveUnlockedSkin(int id);
+    int GetCurrencyCount(CurrencyTypes type);
 };

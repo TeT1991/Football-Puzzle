@@ -7,20 +7,35 @@ public class MainMenuPresenter : IDisposable
     private readonly IGlobalGameStateService _globalStateGameService;
     private readonly ISkinService _skinService;
 
-    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView, ISkinService skinService)
+    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView, ISkinService skinService, IGlobalGameStateService globalStateGameService)
     {
+        _skinService = skinService;
         _mainMenuUIView = mainMenuView;
         _mainMenuUIView.Init();
         _skinsShopUIView = skinsShopUIView;
-        _skinsShopUIView.Init();
-        _skinService = skinService;
+        _skinsShopUIView.Init(_skinService.GetCurrent());
 
+        _globalStateGameService = globalStateGameService;
 
-        _globalStateGameService = ServiceLocator.Get<IGlobalGameStateService>();
+        _skinService.SkinChanged += _skinsShopUIView.MarkItemAsSelected;
 
         _mainMenuUIView.PlayButtonClicked += OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked += OnSkinShopButtonClicked;
+
+        _skinsShopUIView.SkinButonClicked += TryChangeSkin;
         _skinsShopUIView.CloseButtonCliked += OnSkinShopButtonCloseClicked;
+    }
+
+    private void TryChangeSkin(int id)
+    {
+        if (_skinService.IsUnlocked(id))
+        {
+            _skinService.TrySetCurrent(id);
+        }
+        else
+        {
+            UnityEngine.Debug.Log("Скин заблокирован");
+        }
     }
 
     private void OnPlayButtonCliked()
@@ -47,5 +62,7 @@ public class MainMenuPresenter : IDisposable
         _mainMenuUIView.PlayButtonClicked -= OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked -= OnSkinShopButtonClicked;
         _skinsShopUIView.CloseButtonCliked -= OnSkinShopButtonCloseClicked;
+        _skinsShopUIView.SkinButonClicked -= TryChangeSkin;
+        _skinService.SkinChanged -= _skinsShopUIView.MarkItemAsSelected;
     }
 }
