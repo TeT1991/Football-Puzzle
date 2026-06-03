@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class SkinService : ISkinService
 {
@@ -9,8 +10,7 @@ public class SkinService : ISkinService
     private int _curentSkinId;
 
     public event Action<int> SkinChanged;
-
-    public int SkinsCount => _catalog.Catalog.Count;
+    public event Action<int> SkinUlocked;
 
     public SkinService(ISaveService saveService,SkinsCatalog catalog)
     {
@@ -42,12 +42,25 @@ public class SkinService : ISkinService
     public void Unlock(int id)
     {
         _saveService.SaveUnlockedSkin(id);
+        SkinUlocked?.Invoke(id);
     }
 
-    public IReadOnlyList<ShopItemData> GetDatas()
+    public SkinDefinition GetSkin(int id)
     {
-        List<ShopItemData> datas = new();
-        ShopItemData data;
+        SkinDefinition skin = _catalog.GetById(id);
+
+        if (skin == null)
+        {
+            throw new Exception($"Skin with id - {id} not found");
+        }
+
+        return skin;
+    }
+
+    public IReadOnlyList<SkinShopItemData> GetDatas()
+    {
+        List<SkinShopItemData> datas = new();
+        SkinShopItemData data;
 
         foreach (SkinDefinition skin in _catalog.Catalog)
         {

@@ -11,6 +11,7 @@ public class GameBootstrap : MonoBehaviour
     private SaveService _saveService;
     private SkinService _skinService;
     private GlobalGameStateService _gloabalGameStateService;
+    private WalletService _walletService;
 
     private void Awake()
     {
@@ -45,6 +46,11 @@ public class GameBootstrap : MonoBehaviour
 
         _gloabalGameStateService = new();
         ServiceLocator.Register<IGlobalGameStateService>(_gloabalGameStateService);
+
+        _walletService = new(_saveService);
+        ServiceLocator.Register<IWalletService>(_walletService);
+        _walletService.IncreaseCurrency(CurrencyTypes.Soft, 123); // тестово, потом убрать
+        _walletService.IncreaseCurrency(CurrencyTypes.Hard, 50); //тестово, потом убрать
     }
 
     private void InitCurrentSkin()

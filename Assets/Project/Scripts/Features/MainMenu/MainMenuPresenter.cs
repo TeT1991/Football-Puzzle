@@ -6,16 +6,20 @@ public class MainMenuPresenter : IDisposable
     private readonly SkinsShopUIView _skinsShopUIView;
     private readonly IGlobalGameStateService _globalStateGameService;
     private readonly ISkinService _skinService;
+    private readonly IWalletService _walletService;
 
-    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView, ISkinService skinService, IGlobalGameStateService globalStateGameService)
+    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView, 
+        ISkinService skinService, IGlobalGameStateService globalStateGameService, IWalletService walletService)
     {
+        _globalStateGameService = globalStateGameService;
         _skinService = skinService;
+        _walletService = walletService;
+
         _mainMenuUIView = mainMenuView;
         _mainMenuUIView.Init();
         _skinsShopUIView = skinsShopUIView;
         _skinsShopUIView.Init(_skinService.GetCurrent());
 
-        _globalStateGameService = globalStateGameService;
 
         _skinService.SkinChanged += _skinsShopUIView.MarkItemAsSelected;
 
@@ -23,6 +27,7 @@ public class MainMenuPresenter : IDisposable
         _mainMenuUIView.SkinsShopButtonClicked += OnSkinShopButtonClicked;
 
         _skinsShopUIView.SkinButonClicked += TryChangeSkin;
+        _skinsShopUIView.BuyButtonClicked += TryBuySkin;
         _skinsShopUIView.CloseButtonCliked += OnSkinShopButtonCloseClicked;
     }
 
@@ -35,6 +40,25 @@ public class MainMenuPresenter : IDisposable
         else
         {
             UnityEngine.Debug.Log("Скин заблокирован");
+        }
+    }
+
+    private void TryBuySkin(int id)
+    {
+        SkinDefinition skin = _skinService.GetSkin(id);
+
+        if(skin == null)
+        {
+            throw new Exception($"Cant buy skin {id}");
+        }
+
+        int price = skin.Price;
+        CurrencyTypes currencyType = skin.CurrencyType;
+
+        if(_walletService.TrySpend(currencyType, price))
+        {
+            _skinService.Unlock(id);
+            _skinsShopUIView.Unlock(id);
         }
     }
 
@@ -62,6 +86,7 @@ public class MainMenuPresenter : IDisposable
         _mainMenuUIView.PlayButtonClicked -= OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked -= OnSkinShopButtonClicked;
         _skinsShopUIView.CloseButtonCliked -= OnSkinShopButtonCloseClicked;
+        _skinsShopUIView.BuyButtonClicked += TryBuySkin;
         _skinsShopUIView.SkinButonClicked -= TryChangeSkin;
         _skinService.SkinChanged -= _skinsShopUIView.MarkItemAsSelected;
     }

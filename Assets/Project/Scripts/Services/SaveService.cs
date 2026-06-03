@@ -6,7 +6,7 @@ public class SaveService : ISaveService
 
     public SaveService(int initialSkinId)
     {
-        if(YG2.saves.Data == null)
+        if (YG2.saves.Data == null)
         {
             _saveData = SaveData.CreateNew();
             Save();
@@ -25,9 +25,8 @@ public class SaveService : ISaveService
     {
         if (type == CurrencyTypes.Soft)
         {
-            return _saveData.SofCurrency;
+            return _saveData.SoftCurrency;
         }
-
         else
         {
             return _saveData.HardCurrency;
@@ -40,7 +39,7 @@ public class SaveService : ISaveService
         {
             return true;
         }
-        
+
         return false;
     }
 
@@ -53,6 +52,20 @@ public class SaveService : ISaveService
     {
         YG2.saves.Data = _saveData;
         YG2.SaveProgress();
+    }
+
+    public void SaveCurrencyCount(CurrencyTypes type, int count)
+    {
+        if (type == CurrencyTypes.Soft)
+        {
+            _saveData.SoftCurrency = count;
+        }
+        else
+        {
+            _saveData.HardCurrency = count;
+        }
+
+        Save();
     }
 
     public void SaveCurrentSkin(int id)
@@ -70,7 +83,7 @@ public class SaveService : ISaveService
         }
         else
         {
-           UnityEngine.Debug.Log($"skin {id} akready Exist");
+            UnityEngine.Debug.Log($"skin {id} akready Exist");
         }
     }
 }

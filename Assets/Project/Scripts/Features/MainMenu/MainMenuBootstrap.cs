@@ -6,23 +6,33 @@ public class MainMenuBootstrap : MonoBehaviour
 {
     [SerializeField] private MainMenuUIView _mainMenuUIView;
     [SerializeField] private SkinsShopUIView _skinsShopUIView;
+    [SerializeField] private MoneyPanelView _softCurrencyPanelView;
+    [SerializeField] private MoneyPanelView _hardCurrencyPanelView;
 
     private ISkinService _skinService;
     private IGlobalGameStateService _globalGameStateService;
+    private IWalletService _walletService;
 
     private List<IDisposable> _disposables;
 
     private MainMenuPresenter _mainMenuPresenter;
+    private MoneyPanelPresenter _moneyPanelPresenter;
 
     private void Awake()
     {
         _skinService = ServiceLocator.Get<ISkinService>();
-        _skinService.Unlock(1);
 
         _globalGameStateService = ServiceLocator.Get<IGlobalGameStateService>();
+
+        _walletService = ServiceLocator.Get<IWalletService>();
+
         _disposables = new();
-        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService, _globalGameStateService);
+        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService, _globalGameStateService, _walletService);
         _disposables.Add(_mainMenuPresenter);
+
+        _moneyPanelPresenter = new(_walletService, _softCurrencyPanelView, _hardCurrencyPanelView);
+        _disposables.Add(_moneyPanelPresenter);
+
     }
 
     private void OnDestroy()

@@ -7,11 +7,11 @@
         false,
         false
     ],
-    "idSave": 24,
+    "idSave": 95,
     "Data": {
-        "SofCurrency": 0,
-        "HardCurrency": 0,
-        "CurrentSkinId": 0,
+        "SoftCurrency": 23,
+        "HardCurrency": 50,
+        "CurrentSkinId": 1,
         "UnlockedSkins": [
             0,
             1

@@ -8,11 +8,11 @@ public class SkinsShopUIView : MonoBehaviour
     [SerializeField] private Button _closeButton;
     [SerializeField] private Button _closeBackgroundButton;
     [SerializeField] private RectTransform _itemsParent;
-    [SerializeField] private ShopItemView _shopItemViewPrefab;
+    [SerializeField] private SkinShopItemView _shopItemViewPrefab;
 
     private int _selectedSkinId;
 
-    private List<ShopItemView> _items;
+    private List<SkinShopItemView> _items;
 
     public event Action CloseButtonCliked;
 
@@ -36,13 +36,13 @@ public class SkinsShopUIView : MonoBehaviour
         _selectedSkinId = selectedId;
     }
 
-    public void CreateItems(IReadOnlyList<ShopItemData> shopItemDatas)
+    public void CreateItems(IReadOnlyList<SkinShopItemData> shopItemDatas)
     {
         ClearItems();
 
-        foreach (ShopItemData shopItemData in shopItemDatas)
+        foreach (SkinShopItemData shopItemData in shopItemDatas)
         {
-            ShopItemView item = Instantiate(_shopItemViewPrefab, _itemsParent, false);
+            SkinShopItemView item = Instantiate(_shopItemViewPrefab, _itemsParent, false);
 
             item.Init(shopItemData);
             item.SkinButtonClicked += OnSkinButtonClicked;
@@ -71,11 +71,23 @@ public class SkinsShopUIView : MonoBehaviour
         _items.Clear();
     }
 
+    public void Unlock(int id)
+    {
+        foreach (SkinShopItemView item in _items)
+        {
+            if (item.Id == id)
+            {
+                item.Unlock();
+                break;
+            }
+        }
+    }
+
     public void MarkItemAsSelected(int id)
     {
         MarkItemsAsUnselected();
 
-        foreach (ShopItemView item in _items)
+        foreach (SkinShopItemView item in _items)
         {
             if (item.Id == id)
             {
@@ -88,7 +100,7 @@ public class SkinsShopUIView : MonoBehaviour
 
     private void MarkItemsAsUnselected()
     {
-        foreach (ShopItemView item in _items)
+        foreach (SkinShopItemView item in _items)
         {
             item.HideSelectedMark();
         }

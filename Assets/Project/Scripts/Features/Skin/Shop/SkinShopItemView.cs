@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ShopItemView : MonoBehaviour
+public class SkinShopItemView : MonoBehaviour
 {
     [SerializeField] private Button _skinButton;
     [SerializeField] private Button _buyButton;
@@ -20,13 +20,15 @@ public class ShopItemView : MonoBehaviour
     public int Id => _id;
     public float Price => _price;
 
-    public void Init( ShopItemData data)
+    public void Init( SkinShopItemData data)
     {
         _id = data.Id;
         _price = data.Price;
 
-        _skinButton.interactable = data.IsUnlocked;
-        _buyButton.gameObject.SetActive(data.IsUnlocked == false);
+        if (data.IsUnlocked)
+        {
+            Unlock();
+        }
 
         _skinSprite.text = _id.ToString();
         _priceText.text = _price.ToString();
@@ -34,6 +36,12 @@ public class ShopItemView : MonoBehaviour
         _skinButton.onClick.AddListener(OnSkinButtonClicked);
         _buyButton.onClick.AddListener(OnBuyButtonClicked);
 
+    }
+
+    public void Unlock()
+    {
+        _skinButton.interactable = true;
+        _buyButton.gameObject.SetActive(false);
     }
 
     public void ShowSelectedMark()

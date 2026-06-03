@@ -1,11 +1,11 @@
-public class ShopItemData
+public class SkinShopItemData
 {
     private readonly int _id;
     private readonly float _price;
     private readonly bool _isUnlocked;
     private readonly bool _canBuy;
 
-    public ShopItemData(int id, float price, bool isUnlocked)
+    public SkinShopItemData(int id, float price, bool isUnlocked)
     {
         _id = id;
         _price = price;

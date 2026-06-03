@@ -27,12 +27,25 @@ public class WalletService : IWalletService
         {
             _softCurrency -= value;
             CurrencyCountChanged?.Invoke(CurrencyTypes.Soft, _softCurrency);
+            _saveService.SaveCurrencyCount(CurrencyTypes.Soft, _softCurrency);
         }
         else
         {
             _hardCurrency -= value;
             CurrencyCountChanged?.Invoke(CurrencyTypes.Hard, _hardCurrency);
+            _saveService.SaveCurrencyCount(CurrencyTypes.Hard, _hardCurrency);
         }
+    }
+
+    public bool TrySpend(CurrencyTypes currencyType, int value)
+    {
+        if (IsEnough(currencyType, value) == false)
+        {
+            return false;
+        }
+
+        DecreaseCurrency(currencyType, value);
+        return true;
     }
 
     public void IncreaseCurrency(CurrencyTypes currencyType, int value)
@@ -46,10 +59,13 @@ public class WalletService : IWalletService
         {
             _softCurrency += value;
             CurrencyCountChanged?.Invoke(CurrencyTypes.Soft, _softCurrency);
+            _saveService.SaveCurrencyCount(CurrencyTypes.Soft, _softCurrency);
         }
         else
         {
             _hardCurrency += value;
+            CurrencyCountChanged?.Invoke(CurrencyTypes.Hard, _hardCurrency);
+            _saveService.SaveCurrencyCount(CurrencyTypes.Hard, _hardCurrency);
         }
     }
     public int GetCount(CurrencyTypes currencyType)
@@ -68,11 +84,11 @@ public class WalletService : IWalletService
     {
         if (currencyType == CurrencyTypes.Soft)
         {
-            return _softCurrency - value > 0;
+            return _softCurrency >= value;
         }
         else
         {
-            return _hardCurrency - value > 0;
+            return _hardCurrency >= value;
         }
     }
 }
