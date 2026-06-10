@@ -14,7 +14,7 @@ public class SkinsShopUIView : MonoBehaviour
 
     private List<SkinShopItemView> _items;
 
-    public event Action CloseButtonCliked;
+    public event Action CloseButtonClicked;
 
     public event Action<int> SkinButonClicked;
     public event Action<int> BuyButtonClicked;
@@ -119,6 +119,6 @@ public class SkinsShopUIView : MonoBehaviour
 
     private void OnCloseButtonCliked()
     {
-        CloseButtonCliked?.Invoke();
+        CloseButtonClicked?.Invoke();
     }
 }

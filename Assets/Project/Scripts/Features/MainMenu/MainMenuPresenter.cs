@@ -28,7 +28,7 @@ public class MainMenuPresenter : IDisposable
 
         _skinsShopUIView.SkinButonClicked += TryChangeSkin;
         _skinsShopUIView.BuyButtonClicked += TryBuySkin;
-        _skinsShopUIView.CloseButtonCliked += OnSkinShopButtonCloseClicked;
+        _skinsShopUIView.CloseButtonClicked += OnSkinShopButtonCloseClicked;
     }
 
     private void TryChangeSkin(int id)
@@ -85,7 +85,7 @@ public class MainMenuPresenter : IDisposable
     {
         _mainMenuUIView.PlayButtonClicked -= OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked -= OnSkinShopButtonClicked;
-        _skinsShopUIView.CloseButtonCliked -= OnSkinShopButtonCloseClicked;
+        _skinsShopUIView.CloseButtonClicked -= OnSkinShopButtonCloseClicked;
         _skinsShopUIView.BuyButtonClicked -= TryBuySkin;
         _skinsShopUIView.SkinButonClicked -= TryChangeSkin;
         _skinService.SkinChanged -= _skinsShopUIView.MarkItemAsSelected;

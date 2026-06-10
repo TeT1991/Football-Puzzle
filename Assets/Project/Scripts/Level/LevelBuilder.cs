@@ -8,8 +8,8 @@ public class LevelBuilder
 
     private int _width;
     private int _height;
-    private float _gridPositionOffseX;
-    private float _gridPositionOffseY;
+    private float _gridPositionOffsetX;
+    private float _gridPositionOffsetY;
 
     private CellView[,] _cells;
 
@@ -23,14 +23,14 @@ public class LevelBuilder
         _width = size.x;
         _height = size.y;
         _cells = new CellView[_width, _height];
-        _gridPositionOffseX = (_width - 1) * cellSize / 2f;
-        _gridPositionOffseY = (_height - 1) * cellSize / 2f;
+        _gridPositionOffsetX = (_width - 1) * cellSize / 2f;
+        _gridPositionOffsetY = (_height - 1) * cellSize / 2f;
 
         _cellsParent = cellsParent; 
     }
 
-    public float GridPositionOffseX => _gridPositionOffseX;
-    public float GridPositionOffseY => _gridPositionOffseY;
+    public float GridPositionOffsetX => _gridPositionOffsetX;
+    public float GridPositionOffsetY => _gridPositionOffsetY;
 
     public void BuildLevel()
     {
@@ -45,13 +45,13 @@ public class LevelBuilder
         {
             for (int x = 0; x < _width; x++)
             {
-                float xPosition = x * cellSize - _gridPositionOffseX;
-                float yPosition = y * cellSize - _gridPositionOffseY;
+                float xPosition = x * cellSize - _gridPositionOffsetX;
+                float yPosition = y * cellSize - _gridPositionOffsetY;
                 Vector2 position = new(xPosition, yPosition);
                 Vector2Int coordinates = new(x, y);
 
                 CellView cell = MonoBehaviour.Instantiate(_cellViewPrefab, _cellsParent);
-                cell.transform.position = position;
+                cell.transform.localPosition = position;
                 cell.Init(coordinates);
                 _cells[x,y] = cell;
             }

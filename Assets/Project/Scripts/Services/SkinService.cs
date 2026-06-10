@@ -7,7 +7,7 @@ public class SkinService : ISkinService
     private readonly ISaveService _saveService;
     private readonly SkinsCatalog _catalog;
 
-    private int _curentSkinId;
+    private int _currentSkinId;
 
     public event Action<int> SkinChanged;
     public event Action<int> SkinUlocked;
@@ -15,7 +15,7 @@ public class SkinService : ISkinService
     public SkinService(ISaveService saveService,SkinsCatalog catalog)
     {
         _saveService = saveService;
-        _curentSkinId = _saveService.CurrentSkinId;
+        _currentSkinId = _saveService.CurrentSkinId;
         _catalog = catalog;
     }
     public int GetCurrent()
@@ -30,13 +30,13 @@ public class SkinService : ISkinService
 
     public void TrySetCurrent(int id)
     {
-        if (id == _curentSkinId)
+        if (id == _currentSkinId)
         {
             return;
         }
-        _curentSkinId = id;
-        _saveService.SaveCurrentSkin(_curentSkinId);
-        SkinChanged?.Invoke(_curentSkinId);
+        _currentSkinId = id;
+        _saveService.SaveCurrentSkin(_currentSkinId);
+        SkinChanged?.Invoke(_currentSkinId);
     }
 
     public void Unlock(int id)

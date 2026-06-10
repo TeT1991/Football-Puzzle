@@ -7,16 +7,14 @@ public class LevelProcessor : MonoBehaviour
 
     private CellView[,] _cells;
 
-    public void Init(LevelData levelData, LevelBuilder levelBuilder, CellSelector cellSelector)
+    public void Init(LevelBuilder levelBuilder, CellSelector cellSelector)
     {
-        int levelWidth = levelData.Width;
-        int levelHeight = levelData.Height;
         _levelBuilder = levelBuilder;
         _levelBuilder.BuildLevel();
         _cells = _levelBuilder.GetCells();
 
         _cellSelector = cellSelector;
-        _cellSelector.Init(_levelBuilder.GetCells(), _levelBuilder.GridPositionOffseX, _levelBuilder.GridPositionOffseY);
+        _cellSelector.Init(_cells, _levelBuilder.GridPositionOffsetX, _levelBuilder.GridPositionOffsetY);
 
     }
 }

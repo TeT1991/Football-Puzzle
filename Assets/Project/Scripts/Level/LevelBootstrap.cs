@@ -1,10 +1,10 @@
 using UnityEngine;
 
-public class LevelBoostrap : MonoBehaviour
+public class LevelBootstrap : MonoBehaviour
 {
-    [SerializeField] private CellView _cellVIewPrefab;
+    [SerializeField] private CellView _cellViewPrefab;
     [SerializeField] private Transform _cellsParent;
-    [SerializeField] private LevelDefenition _levelDefenition;
+    [SerializeField] private LevelDefinition _levelDefenition;
     [SerializeField] private CellSelector _cellSelector;
     [SerializeField] private LevelProcessor _levelProcessor;
 
@@ -16,12 +16,12 @@ public class LevelBoostrap : MonoBehaviour
         LevelData levelData = GenerateLevelData();
         Vector2Int levelSize = new(levelData.Width, levelData.Height);
 
-        _levelBuilder = new(levelSize,_cellVIewPrefab, _cellsParent);
+        _levelBuilder = new(levelSize,_cellViewPrefab, _cellsParent);
 
         _skinLoader = new();
         _skinLoader.Load();
 
-        _levelProcessor.Init(levelData, _levelBuilder, _cellSelector);
+        _levelProcessor.Init(_levelBuilder, _cellSelector);
     }
 
     private LevelData GenerateLevelData()
