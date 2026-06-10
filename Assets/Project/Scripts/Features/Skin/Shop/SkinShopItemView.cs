@@ -27,10 +27,14 @@ public class SkinShopItemView : MonoBehaviour
 
         if (data.IsUnlocked)
         {
-            Unlock();
+            ShowUnlockGraphic();
+        }
+        else
+        {
+            ShowLockGraphic();
         }
 
-        _skinSprite.text = _id.ToString();
+            _skinSprite.text = _id.ToString();
         _priceText.text = _price.ToString();
 
         _skinButton.onClick.AddListener(OnSkinButtonClicked);
@@ -38,7 +42,7 @@ public class SkinShopItemView : MonoBehaviour
 
     }
 
-    public void Unlock()
+    public void ShowUnlockGraphic()
     {
         _skinButton.interactable = true;
         _buyButton.gameObject.SetActive(false);
@@ -52,6 +56,12 @@ public class SkinShopItemView : MonoBehaviour
     public void HideSelectedMark()
     {
         _markAsSelectedObject.gameObject.SetActive(false);
+    }
+
+    private void ShowLockGraphic()
+    {
+        _skinButton.interactable = false;
+        _buyButton.gameObject.SetActive(true);
     }
 
     private void OnBuyButtonClicked()

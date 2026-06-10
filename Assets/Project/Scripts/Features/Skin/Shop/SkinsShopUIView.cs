@@ -77,7 +77,7 @@ public class SkinsShopUIView : MonoBehaviour
         {
             if (item.Id == id)
             {
-                item.Unlock();
+                item.ShowUnlockGraphic();
                 break;
             }
         }

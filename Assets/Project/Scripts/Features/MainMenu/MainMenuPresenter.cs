@@ -47,7 +47,7 @@ public class MainMenuPresenter : IDisposable
     {
         SkinDefinition skin = _skinService.GetSkin(id);
 
-        if(skin == null)
+        if(skin == null || _skinService.IsUnlocked(id))
         {
             throw new Exception($"Cant buy skin {id}");
         }
@@ -86,7 +86,7 @@ public class MainMenuPresenter : IDisposable
         _mainMenuUIView.PlayButtonClicked -= OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked -= OnSkinShopButtonClicked;
         _skinsShopUIView.CloseButtonCliked -= OnSkinShopButtonCloseClicked;
-        _skinsShopUIView.BuyButtonClicked += TryBuySkin;
+        _skinsShopUIView.BuyButtonClicked -= TryBuySkin;
         _skinsShopUIView.SkinButonClicked -= TryChangeSkin;
         _skinService.SkinChanged -= _skinsShopUIView.MarkItemAsSelected;
     }
