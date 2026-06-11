@@ -7,14 +7,10 @@ public class LevelEditorToolEditor : Editor
     private LevelEditorTool _tool;
     private LevelEditorAssetUtility _assetUtility;
 
-    private void Awake()
+    private void OnEnable()
     {
         _tool = (LevelEditorTool)target;
         _assetUtility = new();
-    }
-
-    private void OnEnable()
-    {
         Debug.Log("LevelEditorToolEditor enabled");
         SceneView.duringSceneGui += OnSceneGUI;
     }
@@ -68,9 +64,19 @@ public class LevelEditorToolEditor : Editor
     {
         Event e = Event.current;
 
-        if (e.type == EventType.MouseDown && _tool.CurrentMode == LevelEditorMode.PlacingCharacters)
+        if (e.type == EventType.MouseDown && e.button == 0 && _tool.CurrentMode == LevelEditorMode.PlacingCharacters)
         {
-            Debug.Log("Ћевый клик мыши в Scene View");
+            Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
+
+            Plane plane = new Plane(Vector3.forward, Vector3.zero);
+
+            if (plane.Raycast(ray, out float distance))
+            {
+                Vector3 worldPosition = ray.GetPoint(distance);
+                _tool.TrySelectCell(worldPosition);
+            }
+
+            e.Use();
         }
 
         if (e.type == EventType.Layout && _tool.CurrentMode == LevelEditorMode.PlacingCharacters)
@@ -83,9 +89,10 @@ public class LevelEditorToolEditor : Editor
             Debug.Log("Escape pressed");
 
             _tool.StopPlacingCharacters();
+            ActiveEditorTracker.sharedTracker.isLocked = false;
+            ActiveEditorTracker.sharedTracker.ForceRebuild();
 
             e.Use();
-            return;
         }
 
     }

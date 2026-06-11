@@ -1,12 +1,12 @@
+﻿using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class LevelEditorTool : MonoBehaviour
 {
-    [SerializeField] private string _path = "Assets/Project/Levels/NewLevelDefinition.asset";
-
     [SerializeField] private LevelDefinition _levelDefinition;
     [SerializeField] private CellView _cellViewPrefab;
     [SerializeField] private Transform _cellsParent;
+    [SerializeField] private CellSelector _cellSelector;
     [SerializeField] private int _gridWidth;
     [SerializeField] private int _gridHeight;
 
@@ -15,7 +15,11 @@ public class LevelEditorTool : MonoBehaviour
 
     private LevelBuilder _levelBuilder;
     private CharacterCreator _characterCreator;
+
     private CellView[,] _cells;
+    private float _gridPositionOffsetX;
+    private float _gridPositionOffsetY;
+
     private LevelEditorMode _currentMode = LevelEditorMode.None;
     public LevelEditorMode CurrentMode => _currentMode;
 
@@ -37,6 +41,11 @@ public class LevelEditorTool : MonoBehaviour
         _levelBuilder.BuildLevel();
         _cells = new CellView[levelData.Width, levelData.Height];
         _cells = _levelBuilder.GetCells();
+
+        float cellSize = 1;
+        _gridPositionOffsetX = GameUtility.CalculateGridOffset(_levelDefinition.Width, cellSize);
+        _gridPositionOffsetY = GameUtility.CalculateGridOffset(_levelDefinition.Height, cellSize);
+        _cellSelector.Init((CellView[,])_cells.Clone(), _gridPositionOffsetX, _gridPositionOffsetY);
     }
 
     public void ClearLevel()
@@ -60,12 +69,47 @@ public class LevelEditorTool : MonoBehaviour
 
     public void StartPlacingCharacters()
     {
+        if (_cells == null)
+        {
+            TryRebuildCellsFromScene();
+        }
+
         SetMode(LevelEditorMode.PlacingCharacters);
     }
 
     public void StopPlacingCharacters()
     {
         SetMode(LevelEditorMode.None);
+        Debug.Log("Stop placing");
+    }
+
+    public void TrySelectCell(Vector2 worldPosition)
+    {
+        if (_cells == null)
+        {
+            bool rebuilt = TryRebuildCellsFromScene();
+
+            if (rebuilt == false)
+            {
+                Debug.LogWarning("No cells found. Create level first.");
+                return;
+            }
+        }
+
+        if (_cellSelector.TryGetCell(worldPosition, out CellView cell))
+        {
+            Debug.Log(cell.name);
+            _selectedCell = cell;
+        }
+        else
+        {
+            Debug.Log("Мимо");
+        }
+    }
+
+    public void PlaceCharacter(Vector2Int position)
+    {
+        _characterCreator.CreateCharacter(position);
     }
 
     public void SetMode(LevelEditorMode mode)
@@ -77,6 +121,40 @@ public class LevelEditorTool : MonoBehaviour
     public void ResetMode()
     {
         SetMode(LevelEditorMode.None);
+    }
+
+    public bool TryRebuildCellsFromScene()
+    {
+        LevelData levelData = GenerateLevelData();
+
+        _cells = new CellView[levelData.Width, levelData.Height];
+
+        CellView[] sceneCells = _cellsParent.GetComponentsInChildren<CellView>();
+
+        foreach (CellView cell in sceneCells)
+        {
+            Vector2Int coordinates = cell.Coordinates;
+
+            if (coordinates.x < 0 ||
+                coordinates.y < 0 ||
+                coordinates.x >= levelData.Width ||
+                coordinates.y >= levelData.Height)
+            {
+                Debug.LogWarning($"Cell {cell.name} has invalid coordinates {coordinates}");
+                continue;
+            }
+
+            _cells[coordinates.x, coordinates.y] = cell;
+        }
+
+        float cellSize = 1f;
+
+        _gridPositionOffsetX = GameUtility.CalculateGridOffset(levelData.Width, cellSize);
+        _gridPositionOffsetY = GameUtility.CalculateGridOffset(levelData.Height, cellSize);
+
+        _cellSelector.Init(_cells, _gridPositionOffsetX, _gridPositionOffsetY);
+
+        return sceneCells.Length > 0;
     }
 
     public LevelData GenerateLevelData()
@@ -122,6 +200,12 @@ public class CharacterCreator
 
     public GameObject CreateCharacter(Vector2Int position)
     {
+        if (_character != null)
+        {
+            MonoBehaviour.Destroy(_character.gameObject);
+            _character = null;
+        }
+
         MonoBehaviour.Instantiate(_character);
         _character.transform.SetParent(_parent);
         _character.transform.position = (Vector2)position;

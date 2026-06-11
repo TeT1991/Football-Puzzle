@@ -7,8 +7,6 @@ public class CellSelector : MonoBehaviour
     private float _gridPositionOffsestX;
     private float _gridPositionOffsestY;
     private Camera _camera;
-    private GridCoordinatesConverter _coordinatesConverter;
-    private Vector2 _mouseWorldPosition;
 
     private void Awake()
     {
@@ -20,24 +18,25 @@ public class CellSelector : MonoBehaviour
         _cells = cells;
         _gridPositionOffsestX = gridPositionOffsestX;
         _gridPositionOffsestY = gridPositionOffsestY;
-        _coordinatesConverter = new();
     }
 
     public void Update()
     {
-        _mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
+        //_mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
 
-        if (TryGetCell(_coordinatesConverter.ConvertMousePositionToCoordinates(_mouseWorldPosition, _gridPositionOffsestX, _gridPositionOffsestY),
-            out CellView cell))
-        {
-            Debug.Log(cell.name);
-        }
+        //if (TryGetCell(GameUtility.ConvertMousePositionToCoordinates(_mouseWorldPosition, _gridPositionOffsestX, _gridPositionOffsestY),
+        //    out CellView cell))
+        //{
+        //    Debug.Log(cell.name);
+        //}
     }
 
-    public bool TryGetCell(Vector2Int coodinates, out CellView cell)
+    public bool TryGetCell(Vector2 position, out CellView cell)
     {
-        int x = coodinates.x;
-        int y = coodinates.y;
+        Vector2Int coordinates = GameUtility.ConvertPositionToCoordinates(position, _gridPositionOffsestX, _gridPositionOffsestY);
+
+        int x = coordinates.x;
+        int y = coordinates.y;
         int xSize = _cells.GetLength(0);
         int ySize = _cells.GetLength(1);
 
@@ -49,17 +48,5 @@ public class CellSelector : MonoBehaviour
 
         cell = _cells[x, y];
         return true;
-    }
-}
-
-public class GridCoordinatesConverter
-{
-    public Vector2Int ConvertMousePositionToCoordinates(Vector2 mouseWorldPosition, float gridPositionOffsestX, float gridPositionOffsestY)
-    {
-        float offsetedX = mouseWorldPosition.x + gridPositionOffsestX;
-        float offsetedY = mouseWorldPosition.y + gridPositionOffsestY;
-        Vector2 offsetedPosition = new(offsetedX, offsetedY);
-
-        return Vector2Int.RoundToInt(offsetedPosition);
     }
 }
