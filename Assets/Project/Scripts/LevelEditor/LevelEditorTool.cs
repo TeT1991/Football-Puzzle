@@ -1,4 +1,3 @@
-using UnityEditor;
 using UnityEngine;
 
 public class LevelEditorTool : MonoBehaviour
@@ -11,9 +10,21 @@ public class LevelEditorTool : MonoBehaviour
     [SerializeField] private int _gridWidth;
     [SerializeField] private int _gridHeight;
 
+    [SerializeField] private Transform _characterParent;
+    [SerializeField] private GameObject _characterView;
+
     private LevelBuilder _levelBuilder;
+    private CharacterCreator _characterCreator;
     private CellView[,] _cells;
     private LevelEditorMode _currentMode = LevelEditorMode.None;
+    public LevelEditorMode CurrentMode => _currentMode;
+
+    private CellView _selectedCell;
+
+    private void Awake()
+    {
+        _characterCreator = new(_characterParent, _characterView);
+    }
 
     public void CreateLevel()
     {
@@ -49,15 +60,26 @@ public class LevelEditorTool : MonoBehaviour
 
     public void StartPlacingCharacters()
     {
-        _currentMode = LevelEditorMode.PlacingCharacters;
+        SetMode(LevelEditorMode.PlacingCharacters);
     }
 
     public void StopPlacingCharacters()
     {
-        _currentMode = LevelEditorMode.None;
+        SetMode(LevelEditorMode.None);
     }
 
-    private LevelData GenerateLevelData()
+    public void SetMode(LevelEditorMode mode)
+    {
+        _currentMode = mode;
+
+    }
+
+    public void ResetMode()
+    {
+        SetMode(LevelEditorMode.None);
+    }
+
+    public LevelData GenerateLevelData()
     {
         LevelData levelData;
 
@@ -65,7 +87,6 @@ public class LevelEditorTool : MonoBehaviour
         {
             Debug.LogWarning("Level Definition not found. Creating new level data");
             levelData = new(_gridWidth, _gridHeight);
-            CreateLevelDefinitonAsset(levelData);
         }
         else
         {
@@ -76,14 +97,9 @@ public class LevelEditorTool : MonoBehaviour
         return levelData;
     }
 
-    private void CreateLevelDefinitonAsset(LevelData levelData)
+    public void SetLevelDefinition(LevelDefinition levelDefinition)
     {
-        LevelDefinition levelDefinition = ScriptableObject.CreateInstance<LevelDefinition>();
-        levelDefinition.UpdateData(levelData);
-        AssetDatabase.GenerateUniqueAssetPath(_path);
-        AssetDatabase.CreateAsset(levelDefinition, _path);
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
+        _levelDefinition = levelDefinition;
     }
 }
 
@@ -91,4 +107,25 @@ public enum LevelEditorMode
 {
     None,
     PlacingCharacters
+}
+
+public class CharacterCreator
+{
+    private Transform _parent;
+    private GameObject _character;
+
+    public CharacterCreator(Transform parent, GameObject character)
+    {
+        _parent = parent;
+        _character = character;
+    }
+
+    public GameObject CreateCharacter(Vector2Int position)
+    {
+        MonoBehaviour.Instantiate(_character);
+        _character.transform.SetParent(_parent);
+        _character.transform.position = (Vector2)position;
+
+        return _character;
+    }
 }
