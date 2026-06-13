@@ -2,48 +2,77 @@ using UnityEngine;
 
 public class LevelBootstrap : MonoBehaviour
 {
+    [SerializeField] private LevelDefinition _levelDefenition;
     [SerializeField] private CellView _cellViewPrefab;
     [SerializeField] private Transform _cellsParent;
-    [SerializeField] private LevelDefinition _levelDefenition;
     [SerializeField] private CellSelector _cellSelector;
+    [SerializeField] private Transform _characterParent;
+    [SerializeField] private EntityView _entityViewPrefab;
     [SerializeField] private LevelProcessor _levelProcessor;
 
-    private LevelBuilder _levelBuilder;
-    private SkinLoader _skinLoader;
+    private GridBuilder _gridBuilder;
+    private EntityCreator _entityCreator;
+    private SkinLoader _skinLoader; //Нужен ли?
+
+    private CellView[,] _cells;
 
     private void Awake()
     {
         LevelData levelData = GenerateLevelData();
-        Vector2Int levelSize = new(levelData.Width, levelData.Height);
-
-        _levelBuilder = new(levelSize,_cellViewPrefab, _cellsParent);
 
         _skinLoader = new();
         _skinLoader.Load();
 
-        _levelProcessor.Init(_levelBuilder, _cellSelector);
+        _cells = new CellView[levelData.Width, levelData.Height];
+        _gridBuilder = new(_cellsParent, _cellViewPrefab);
+        _cells = _gridBuilder.CreateTiles(levelData.Width, levelData.Height);
+
+        _entityCreator = new(_characterParent, _entityViewPrefab);
+        CreateCharacter(out EntityView character);
+
+        _levelProcessor.Init(character ,_cellSelector);
     }
 
     private LevelData GenerateLevelData()
     {
         int width = _levelDefenition.Width;
         int height = _levelDefenition.Height;
+        Vector2Int characterStartPosition = _levelDefenition.CharacterPosition;
 
-        return new(width, height);
+        return new(width, height, characterStartPosition);
+    }
+
+    private void CreateCharacter(out EntityView character)
+    {
+        float gridOffsetX = GameUtility.CalculateGridOffset(_levelDefenition.Width);
+        float gridOffsetY = GameUtility.CalculateGridOffset(_levelDefenition.Height);
+
+        float xPosition = _levelDefenition.CharacterPosition.x - gridOffsetX;
+        float yPosition = _levelDefenition.CharacterPosition.y - gridOffsetY;
+        Vector2 offsetedPosition = new Vector2(xPosition, yPosition);
+
+        character = _entityCreator.CreateEntity(offsetedPosition);
     }
 }
 
-public class LevelData
+public class EntityCreator
 {
-    private readonly int _width;
-    private readonly int _height;
+    private readonly Transform _entitiesParent;
+    private readonly EntityView _character;
 
-    public LevelData(int width, int height)
+    public EntityCreator(Transform entitiesPArent, EntityView entityPrefab)
     {
-        _width = width;
-        _height = height;
+        _entitiesParent = entitiesPArent;
+        _character = entityPrefab;
     }
 
-    public int Width => _width;
-    public int Height => _height;
+    public EntityView CreateEntity(Vector2 position)
+    {
+        EntityView entity = MonoBehaviour.Instantiate(_character);
+        entity.transform.SetParent(_entitiesParent, false);
+        entity.transform.position = position;
+        entity.Init();
+
+        return entity;
+    }
 }

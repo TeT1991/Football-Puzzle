@@ -1,144 +1,214 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class LevelEditorTool : MonoBehaviour
 {
+    private const float CellSize = 1f;
+
+    [Header("Level Data")]
     [SerializeField] private LevelDefinition _levelDefinition;
+    [SerializeField, Min(1)] private int _gridWidth = 5;
+    [SerializeField, Min(1)] private int _gridHeight = 5;
+
+    [Header("Grid")]
     [SerializeField] private CellView _cellViewPrefab;
     [SerializeField] private Transform _cellsParent;
-    [SerializeField] private CellSelector _cellSelector;
-    [SerializeField] private int _gridWidth;
-    [SerializeField] private int _gridHeight;
 
+    [Header("EntityView")]
+    [SerializeField] private GameObject _characterPrefab;
     [SerializeField] private Transform _characterParent;
-    [SerializeField] private GameObject _characterView;
 
-    private LevelBuilder _levelBuilder;
-    private CharacterCreator _characterCreator;
+    [Header("Enemies")]
+    [SerializeField] private GameObject _enemyPrefab;
+    [SerializeField] private Transform _enemiesParent;
 
+    private LevelData _levelData;
+    private GridBuilder _gridBuilder;
     private CellView[,] _cells;
+
     private float _gridPositionOffsetX;
     private float _gridPositionOffsetY;
 
     private LevelEditorMode _currentMode = LevelEditorMode.None;
+
+    public LevelDefinition LevelDefinition => _levelDefinition;
     public LevelEditorMode CurrentMode => _currentMode;
 
-    private CellView _selectedCell;
-
-    private void Awake()
+    public float GridPlaneZ
     {
-        _characterCreator = new(_characterParent, _characterView);
+        get
+        {
+            if (_cellsParent != null)
+            {
+                return _cellsParent.position.z;
+            }
+
+            return transform.position.z;
+        }
     }
 
     public void CreateLevel()
     {
+        SetLevelData();
+
+        if (CanBuildGrid() == false)
+        {
+            return;
+        }
+
+        EnsureLevelDefinitionExists(_levelData);
+
         ClearLevel();
 
-        LevelData levelData = GenerateLevelData();
-        Vector2Int gridSize = new(levelData.Width, levelData.Height);
+        BuildGrid();
+        SpawnObjectsFromDefinition();
 
-        _levelBuilder = new(gridSize, _cellViewPrefab, _cellsParent);
-        _levelBuilder.BuildLevel();
-        _cells = new CellView[levelData.Width, levelData.Height];
-        _cells = _levelBuilder.GetCells();
-
-        float cellSize = 1;
-        _gridPositionOffsetX = GameUtility.CalculateGridOffset(_levelDefinition.Width, cellSize);
-        _gridPositionOffsetY = GameUtility.CalculateGridOffset(_levelDefinition.Height, cellSize);
-        _cellSelector.Init((CellView[,])_cells.Clone(), _gridPositionOffsetX, _gridPositionOffsetY);
+        ApplySceneToDefinition();
     }
 
     public void ClearLevel()
     {
-        for (int i = _cellsParent.childCount - 1; i >= 0; i--)
-        {
-            Transform child = _cellsParent.GetChild(i);
+        HashSet<Transform> clearedParents = new HashSet<Transform>();
 
-            if (Application.isPlaying)
-            {
-                Destroy(child.gameObject);
-            }
-            else
-            {
-                DestroyImmediate(child.gameObject);
-            }
-        }
+        ClearParent(_cellsParent, clearedParents);
+        ClearParent(_characterParent, clearedParents);
+        ClearParent(_enemiesParent, clearedParents);
 
         _cells = null;
+        _gridBuilder = null;
+
+        SetMode(LevelEditorMode.None);
+    }
+
+    public void StartPlacingCharacter()
+    {
+        if (EnsureGridReady() == false)
+        {
+            return;
+        }
+
+        SetMode(LevelEditorMode.PlacingCharacter);
+    }
+
+    public void StartPlacingEnemy()
+    {
+        if (EnsureGridReady() == false)
+        {
+            return;
+        }
+
+        SetMode(LevelEditorMode.PlacingEnemy);
+    }
+
+    public void StopPlacement()
+    {
+        SetMode(LevelEditorMode.None);
     }
 
     public void StartPlacingCharacters()
     {
-        if (_cells == null)
-        {
-            TryRebuildCellsFromScene();
-        }
-
-        SetMode(LevelEditorMode.PlacingCharacters);
+        StartPlacingCharacter();
     }
 
     public void StopPlacingCharacters()
     {
-        SetMode(LevelEditorMode.None);
-        Debug.Log("Stop placing");
+        StopPlacement();
     }
 
-    public void TrySelectCell(Vector2 worldPosition)
+    public bool HandleSceneClick(Vector2 worldPosition)
     {
-        if (_cells == null)
+        if (_currentMode == LevelEditorMode.None)
         {
-            bool rebuilt = TryRebuildCellsFromScene();
-
-            if (rebuilt == false)
-            {
-                Debug.LogWarning("No cells found. Create level first.");
-                return;
-            }
+            return false;
         }
 
-        if (_cellSelector.TryGetCell(worldPosition, out CellView cell))
+        if (TryGetCell(worldPosition, out CellView cell) == false)
         {
-            Debug.Log(cell.name);
-            _selectedCell = cell;
+            return false;
         }
-        else
+
+        switch (_currentMode)
         {
-            Debug.Log("Мимо");
+            case LevelEditorMode.PlacingCharacter:
+                return TryPlaceCharacter(cell);
+
+            case LevelEditorMode.PlacingEnemy:
+                return TryPlaceEnemy(cell);
+
+            default:
+                return false;
         }
     }
 
-    public void PlaceCharacter(Vector2Int position)
+    public void ApplySceneToDefinition()
     {
-        _characterCreator.CreateCharacter(position);
+        SetLevelData();
+
+        EnsureLevelDefinitionExists(_levelData);
+
+        bool hasCharacter = TryGetCharacterCoordinates(out Vector2Int characterPosition);
+        List<Vector2Int> enemyPositions = GetEnemyCoordinates();
+
+        _levelDefinition.SetData(
+            _levelData.Width,
+            _levelData.Height,
+            hasCharacter,
+            characterPosition,
+            enemyPositions);
+    }
+
+    public void SetLevelData()
+    {
+        if (_levelDefinition != null)
+        {
+            _levelData = new LevelData(
+                _levelDefinition.Width,
+                _levelDefinition.Height,
+                _levelDefinition.CharacterPosition);
+
+            return;
+        }
+
+        _levelData = new LevelData(
+            Mathf.Max(1, _gridWidth),
+            Mathf.Max(1, _gridHeight),
+            Vector2Int.zero);
+    }
+
+    public void SetLevelDefinition(LevelDefinition levelDefinition)
+    {
+        _levelDefinition = levelDefinition;
     }
 
     public void SetMode(LevelEditorMode mode)
     {
         _currentMode = mode;
-
-    }
-
-    public void ResetMode()
-    {
-        SetMode(LevelEditorMode.None);
     }
 
     public bool TryRebuildCellsFromScene()
     {
-        LevelData levelData = GenerateLevelData();
+        if (_cellsParent == null)
+        {
+            Debug.LogWarning("Cells Parent is not assigned.");
+            return false;
+        }
 
-        _cells = new CellView[levelData.Width, levelData.Height];
+        CellView[] sceneCells = _cellsParent.GetComponentsInChildren<CellView>(true);
 
-        CellView[] sceneCells = _cellsParent.GetComponentsInChildren<CellView>();
+        if (sceneCells.Length == 0)
+        {
+            return false;
+        }
+
+        SetLevelData();
+
+        _cells = new CellView[_levelData.Width, _levelData.Height];
 
         foreach (CellView cell in sceneCells)
         {
             Vector2Int coordinates = cell.Coordinates;
 
-            if (coordinates.x < 0 ||
-                coordinates.y < 0 ||
-                coordinates.x >= levelData.Width ||
-                coordinates.y >= levelData.Height)
+            if (IsInsideGrid(coordinates, _levelData.Width, _levelData.Height) == false)
             {
                 Debug.LogWarning($"Cell {cell.name} has invalid coordinates {coordinates}");
                 continue;
@@ -147,69 +217,459 @@ public class LevelEditorTool : MonoBehaviour
             _cells[coordinates.x, coordinates.y] = cell;
         }
 
-        float cellSize = 1f;
+        _gridPositionOffsetX = GameUtility.CalculateGridOffset(_levelData.Width);
+        _gridPositionOffsetY = GameUtility.CalculateGridOffset(_levelData.Height);
 
-        _gridPositionOffsetX = GameUtility.CalculateGridOffset(levelData.Width, cellSize);
-        _gridPositionOffsetY = GameUtility.CalculateGridOffset(levelData.Height, cellSize);
-
-        _cellSelector.Init(_cells, _gridPositionOffsetX, _gridPositionOffsetY);
-
-        return sceneCells.Length > 0;
+        return true;
     }
 
-    public LevelData GenerateLevelData()
+    private void BuildGrid()
     {
-        LevelData levelData;
+        _gridBuilder = new GridBuilder(_cellsParent, _cellViewPrefab);
 
+        _cells = _gridBuilder.CreateTiles(_levelData.Width, _levelData.Height);
+
+        _gridPositionOffsetX = GameUtility.CalculateGridOffset(_gridWidth);
+        _gridPositionOffsetY = GameUtility.CalculateGridOffset( _gridHeight);
+    }
+
+    private void SpawnObjectsFromDefinition()
+    {
         if (_levelDefinition == null)
         {
-            Debug.LogWarning("Level Definition not found. Creating new level data");
-            levelData = new(_gridWidth, _gridHeight);
+            return;
+        }
+
+        if (_levelDefinition.HasCharacter)
+        {
+            if (TryGetCellByCoordinates(_levelDefinition.CharacterPosition, out CellView characterCell))
+            {
+                TryPlaceCharacter(characterCell, false);
+            }
+        }
+
+        foreach (Vector2Int enemyPosition in _levelDefinition.EnemyPositions)
+        {
+            if (TryGetCellByCoordinates(enemyPosition, out CellView enemyCell))
+            {
+                TryPlaceEnemy(enemyCell, false);
+            }
+        }
+    }
+
+    private bool TryPlaceCharacter(CellView cell, bool updateDefinition = true)
+    {
+        if (cell == null)
+        {
+            return false;
+        }
+
+        if (_characterPrefab == null)
+        {
+            Debug.LogWarning("EntityView Prefab is not assigned.");
+            return false;
+        }
+
+        if (_characterParent == null)
+        {
+            Debug.LogWarning("EntityView Parent is not assigned.");
+            return false;
+        }
+
+        Vector2Int coordinates = cell.Coordinates;
+
+        if (IsEnemyAt(coordinates))
+        {
+            Debug.LogWarning($"Can't place character at {coordinates}. Cell is occupied by enemy.");
+            return false;
+        }
+
+        GameObject character = GetCharacterObject();
+
+        if (character == null)
+        {
+            character = Instantiate(_characterPrefab, _characterParent);
+        }
+
+        SetupPlacedObject(
+            character,
+            LevelEditorObjectType.Character,
+            coordinates,
+            cell.transform.position,
+            "EntityView");
+
+        if (updateDefinition)
+        {
+            ApplySceneToDefinition();
+        }
+
+        return true;
+    }
+
+    private bool TryPlaceEnemy(CellView cell, bool updateDefinition = true)
+    {
+        if (cell == null)
+        {
+            return false;
+        }
+
+        if (_enemyPrefab == null)
+        {
+            Debug.LogWarning("Enemy Prefab is not assigned.");
+            return false;
+        }
+
+        if (_enemiesParent == null)
+        {
+            Debug.LogWarning("Enemies Parent is not assigned.");
+            return false;
+        }
+
+        Vector2Int coordinates = cell.Coordinates;
+
+        if (IsCharacterAt(coordinates))
+        {
+            Debug.LogWarning($"Can't place enemy at {coordinates}. Cell is occupied by character.");
+            return false;
+        }
+
+        if (IsEnemyAt(coordinates))
+        {
+            Debug.LogWarning($"Can't place enemy at {coordinates}. Cell is already occupied by enemy.");
+            return false;
+        }
+
+        GameObject enemy = Instantiate(_enemyPrefab, _enemiesParent);
+
+        SetupPlacedObject(
+            enemy,
+            LevelEditorObjectType.Enemy,
+            coordinates,
+            cell.transform.position,
+            "Enemy");
+
+        if (updateDefinition)
+        {
+            ApplySceneToDefinition();
+        }
+
+        return true;
+    }
+
+    private void SetupPlacedObject(
+        GameObject target,
+        LevelEditorObjectType objectType,
+        Vector2Int coordinates,
+        Vector3 worldPosition,
+        string objectName)
+    {
+        target.transform.position = worldPosition;
+        target.name = $"{objectName} {coordinates.x}:{coordinates.y}";
+
+        LevelEditorPlacedObject placedObject = target.GetComponent<LevelEditorPlacedObject>();
+
+        if (placedObject == null)
+        {
+            placedObject = target.AddComponent<LevelEditorPlacedObject>();
+        }
+
+        placedObject.Init(objectType, coordinates);
+    }
+
+    private bool TryGetCell(Vector2 worldPosition, out CellView cell)
+    {
+        cell = null;
+
+        if (EnsureGridReady() == false)
+        {
+            return false;
+        }
+
+        Vector3 localPosition = _cellsParent.InverseTransformPoint(worldPosition);
+
+        int x = Mathf.RoundToInt(localPosition.x + _gridPositionOffsetX);
+        int y = Mathf.RoundToInt(localPosition.y + _gridPositionOffsetY);
+
+        Vector2Int coordinates = new Vector2Int(x, y);
+
+        if (TryGetCellByCoordinates(coordinates, out CellView candidate) == false)
+        {
+            return false;
+        }
+
+        Vector3 cellLocalPosition = candidate.transform.localPosition;
+
+        bool insideCell =
+            Mathf.Abs(localPosition.x - cellLocalPosition.x) <= CellSize * 0.5f &&
+            Mathf.Abs(localPosition.y - cellLocalPosition.y) <= CellSize * 0.5f;
+
+        if (insideCell == false)
+        {
+            return false;
+        }
+
+        cell = candidate;
+        return true;
+    }
+
+    private bool TryGetCellByCoordinates(Vector2Int coordinates, out CellView cell)
+    {
+        cell = null;
+
+        if (_cells == null)
+        {
+            return false;
+        }
+
+        if (IsInsideGrid(coordinates, _cells.GetLength(0), _cells.GetLength(1)) == false)
+        {
+            return false;
+        }
+
+        cell = _cells[coordinates.x, coordinates.y];
+
+        return cell != null;
+    }
+
+    private bool EnsureGridReady()
+    {
+        if (_cells != null)
+        {
+            return true;
+        }
+
+        if (TryRebuildCellsFromScene())
+        {
+            return true;
+        }
+
+        CreateLevel();
+
+        return _cells != null;
+    }
+
+    private bool CanBuildGrid()
+    {
+        if (_cellViewPrefab == null)
+        {
+            Debug.LogWarning("Cell View Prefab is not assigned.");
+            return false;
+        }
+
+        if (_cellsParent == null)
+        {
+            Debug.LogWarning("Cells Parent is not assigned.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void EnsureLevelDefinitionExists(LevelData levelData)
+    {
+        if (_levelDefinition != null)
+        {
+            return;
+        }
+
+        _levelDefinition = ScriptableObject.CreateInstance<LevelDefinition>();
+        _levelDefinition.UpdateData(levelData);
+        _levelDefinition.name = "Unsaved Level Definition";
+    }
+
+    private GameObject GetCharacterObject()
+    {
+        if (_characterParent == null)
+        {
+            return null;
+        }
+
+        LevelEditorPlacedObject[] placedObjects =
+            _characterParent.GetComponentsInChildren<LevelEditorPlacedObject>(true);
+
+        GameObject foundCharacter = null;
+
+        foreach (LevelEditorPlacedObject placedObject in placedObjects)
+        {
+            if (placedObject.Type != LevelEditorObjectType.Character)
+            {
+                continue;
+            }
+
+            if (foundCharacter == null)
+            {
+                foundCharacter = placedObject.gameObject;
+            }
+            else
+            {
+                DestroyObject(placedObject.gameObject);
+            }
+        }
+
+        return foundCharacter;
+    }
+
+    private bool TryGetCharacterCoordinates(out Vector2Int coordinates)
+    {
+        coordinates = default;
+
+        GameObject character = GetCharacterObject();
+
+        if (character == null)
+        {
+            return false;
+        }
+
+        LevelEditorPlacedObject placedObject = character.GetComponent<LevelEditorPlacedObject>();
+
+        if (placedObject == null)
+        {
+            return false;
+        }
+
+        coordinates = placedObject.Coordinates;
+        return true;
+    }
+
+    private List<Vector2Int> GetEnemyCoordinates()
+    {
+        List<Vector2Int> coordinates = new List<Vector2Int>();
+
+        if (_enemiesParent == null)
+        {
+            return coordinates;
+        }
+
+        LevelEditorPlacedObject[] placedObjects =
+            _enemiesParent.GetComponentsInChildren<LevelEditorPlacedObject>(true);
+
+        HashSet<Vector2Int> usedPositions = new HashSet<Vector2Int>();
+
+        SetLevelData();
+
+        foreach (LevelEditorPlacedObject placedObject in placedObjects)
+        {
+            if (placedObject.Type != LevelEditorObjectType.Enemy)
+            {
+                continue;
+            }
+
+            Vector2Int position = placedObject.Coordinates;
+
+            if (IsInsideGrid(position, _levelData.Width, _levelData.Height) == false)
+            {
+                continue;
+            }
+
+            if (IsCharacterAt(position))
+            {
+                continue;
+            }
+
+            if (usedPositions.Add(position))
+            {
+                coordinates.Add(position);
+            }
+        }
+
+        return coordinates;
+    }
+
+    private bool IsCharacterAt(Vector2Int coordinates)
+    {
+        return TryGetCharacterCoordinates(out Vector2Int characterCoordinates) &&
+               characterCoordinates == coordinates;
+    }
+
+    private bool IsEnemyAt(Vector2Int coordinates)
+    {
+        List<Vector2Int> enemyCoordinates = GetEnemyCoordinates();
+
+        foreach (Vector2Int enemyCoordinate in enemyCoordinates)
+        {
+            if (enemyCoordinate == coordinates)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsInsideGrid(Vector2Int coordinates, int width, int height)
+    {
+        return coordinates.x >= 0 &&
+               coordinates.y >= 0 &&
+               coordinates.x < width &&
+               coordinates.y < height;
+    }
+
+    private void ClearParent(Transform parent, HashSet<Transform> clearedParents)
+    {
+        if (parent == null)
+        {
+            return;
+        }
+
+        if (clearedParents.Add(parent) == false)
+        {
+            return;
+        }
+
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            DestroyObject(parent.GetChild(i).gameObject);
+        }
+    }
+
+    private void DestroyObject(GameObject target)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (Application.isPlaying)
+        {
+            Destroy(target);
         }
         else
         {
-            Debug.LogWarning("Loading data from LevelDefinition");
-            levelData = new(_levelDefinition.Width, _levelDefinition.Height);
+            DestroyImmediate(target);
         }
-
-        return levelData;
     }
 
-    public void SetLevelDefinition(LevelDefinition levelDefinition)
+    private void OnValidate()
     {
-        _levelDefinition = levelDefinition;
+        _gridWidth = Mathf.Max(1, _gridWidth);
+        _gridHeight = Mathf.Max(1, _gridHeight);
     }
 }
 
 public enum LevelEditorMode
 {
     None,
-    PlacingCharacters
+    PlacingCharacter,
+    PlacingEnemy
 }
 
-public class CharacterCreator
+public enum LevelEditorObjectType
 {
-    private Transform _parent;
-    private GameObject _character;
+    Character,
+    Enemy
+}
 
-    public CharacterCreator(Transform parent, GameObject character)
+public class LevelEditorPlacedObject : MonoBehaviour
+{
+    [SerializeField] private LevelEditorObjectType _type;
+    [SerializeField] private Vector2Int _coordinates;
+
+    public LevelEditorObjectType Type => _type;
+    public Vector2Int Coordinates => _coordinates;
+
+    public void Init(LevelEditorObjectType type, Vector2Int coordinates)
     {
-        _parent = parent;
-        _character = character;
-    }
-
-    public GameObject CreateCharacter(Vector2Int position)
-    {
-        if (_character != null)
-        {
-            MonoBehaviour.Destroy(_character.gameObject);
-            _character = null;
-        }
-
-        MonoBehaviour.Instantiate(_character);
-        _character.transform.SetParent(_parent);
-        _character.transform.position = (Vector2)position;
-
-        return _character;
+        _type = type;
+        _coordinates = coordinates;
     }
 }

@@ -2,19 +2,26 @@ using UnityEngine;
 
 public class LevelProcessor : MonoBehaviour
 {
-    private LevelBuilder _levelBuilder;
+    private EntityView _characterView;
+
     private CellSelector _cellSelector;
 
     private CellView[,] _cells;
 
-    public void Init(LevelBuilder levelBuilder, CellSelector cellSelector)
+    public void Init(EntityView character,CellSelector cellSelector)
     {
-        _levelBuilder = levelBuilder;
-        _levelBuilder.BuildLevel();
-        _cells = _levelBuilder.GetCells();
 
         _cellSelector = cellSelector;
-        _cellSelector.Init(_cells, _levelBuilder.GridPositionOffsetX, _levelBuilder.GridPositionOffsetY);
+        //_cellSelector.Init(_cells, _levelBuilder.GridPositionOffsetX, _levelBuilder.GridPositionOffsetY);
 
     }
+}
+
+public enum LevelState
+{
+    Initialization,
+    PlayerTurn,
+    EnemyTurn,
+    Win,
+    Lose
 }

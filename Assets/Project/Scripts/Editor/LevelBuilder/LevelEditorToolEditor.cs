@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 [CustomEditor(typeof(LevelEditorTool))]
@@ -10,90 +11,183 @@ public class LevelEditorToolEditor : Editor
     private void OnEnable()
     {
         _tool = (LevelEditorTool)target;
-        _assetUtility = new();
-        Debug.Log("LevelEditorToolEditor enabled");
+        _assetUtility = new LevelEditorAssetUtility();
+
         SceneView.duringSceneGui += OnSceneGUI;
     }
 
     private void OnDisable()
     {
-        Debug.Log("LevelEditorToolEditor disabled");
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
+        serializedObject.Update();
 
-        if (GUILayout.Button("Create Level"))
+        DrawDefaultInspector();
+
+        serializedObject.ApplyModifiedProperties();
+
+        EditorGUILayout.Space(12);
+
+        DrawModeInfo();
+
+        EditorGUILayout.Space(6);
+
+        if (GUILayout.Button("Create / Rebuild Level"))
         {
             _tool.CreateLevel();
-
-            Debug.Log(_assetUtility);
-
-            LevelDefinition levelDefinition = _assetUtility.CreateLevelDefinitonAsset(_tool.GenerateLevelData());
-
-            _tool.SetLevelDefinition(levelDefinition);
-            EditorUtility.SetDirty(_tool);
+            MarkToolDirty();
         }
 
-        if (GUILayout.Button("Clear Level"))
+        if (GUILayout.Button("Clear Scene Level"))
         {
             _tool.ClearLevel();
+            MarkToolDirty();
         }
 
-        if (GUILayout.Button("Start placing character"))
+        EditorGUILayout.Space(8);
+
+        if (GUILayout.Button("Place EntityView"))
         {
-
-            ActiveEditorTracker.sharedTracker.isLocked = true;
-            ActiveEditorTracker.sharedTracker.ForceRebuild();
-
-            _tool.StartPlacingCharacters();
+            _tool.StartPlacingCharacter();
+            SceneView.RepaintAll();
+            MarkToolDirty();
         }
 
-        if (GUILayout.Button("Stop placing character"))
+        if (GUILayout.Button("Place Enemy"))
         {
-            ActiveEditorTracker.sharedTracker.isLocked = false;
-            ActiveEditorTracker.sharedTracker.ForceRebuild();
-
-            _tool.StopPlacingCharacters();
+            _tool.StartPlacingEnemy();
+            SceneView.RepaintAll();
+            MarkToolDirty();
         }
+
+        if (GUILayout.Button("Stop Placement"))
+        {
+            _tool.StopPlacement();
+            SceneView.RepaintAll();
+            MarkToolDirty();
+        }
+
+        EditorGUILayout.Space(8);
+
+        if (GUILayout.Button("Save"))
+        {
+            SaveCurrent();
+        }
+
+        if (GUILayout.Button("Save As New"))
+        {
+            SaveAsNew();
+        }
+    }
+
+    private void DrawModeInfo()
+    {
+        switch (_tool.CurrentMode)
+        {
+            case LevelEditorMode.None:
+                EditorGUILayout.HelpBox("Mode: None", MessageType.Info);
+                break;
+
+            case LevelEditorMode.PlacingCharacter:
+                EditorGUILayout.HelpBox("Mode: Place EntityView. Click on a cell in Scene View. Esc — cancel.", MessageType.Info);
+                break;
+
+            case LevelEditorMode.PlacingEnemy:
+                EditorGUILayout.HelpBox("Mode: Place Enemy. Click on a free cell in Scene View. Esc — cancel.", MessageType.Info);
+                break;
+        }
+    }
+
+    private void SaveCurrent()
+    {
+        _tool.ApplySceneToDefinition();
+
+        LevelDefinition savedLevelDefinition = _assetUtility.Save(_tool.LevelDefinition);
+
+        if (savedLevelDefinition != null)
+        {
+            _tool.SetLevelDefinition(savedLevelDefinition);
+        }
+
+        MarkToolDirty();
+    }
+
+    private void SaveAsNew()
+    {
+        _tool.ApplySceneToDefinition();
+
+        LevelDefinition newLevelDefinition = _assetUtility.SaveAsNew(_tool.LevelDefinition);
+
+        if (newLevelDefinition != null)
+        {
+            _tool.SetLevelDefinition(newLevelDefinition);
+        }
+
+        MarkToolDirty();
     }
 
     private void OnSceneGUI(SceneView sceneView)
     {
-        Event e = Event.current;
-
-        if (e.type == EventType.MouseDown && e.button == 0 && _tool.CurrentMode == LevelEditorMode.PlacingCharacters)
+        if (_tool == null)
         {
-            Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition);
-
-            Plane plane = new Plane(Vector3.forward, Vector3.zero);
-
-            if (plane.Raycast(ray, out float distance))
-            {
-                Vector3 worldPosition = ray.GetPoint(distance);
-                _tool.TrySelectCell(worldPosition);
-            }
-
-            e.Use();
+            return;
         }
 
-        if (e.type == EventType.Layout && _tool.CurrentMode == LevelEditorMode.PlacingCharacters)
+        Event currentEvent = Event.current;
+
+        if (_tool.CurrentMode == LevelEditorMode.None)
+        {
+            return;
+        }
+
+        if (currentEvent.type == EventType.Layout)
         {
             HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
         }
 
-        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape)
+        if (currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
         {
-            Debug.Log("Escape pressed");
+            _tool.StopPlacement();
 
-            _tool.StopPlacingCharacters();
-            ActiveEditorTracker.sharedTracker.isLocked = false;
-            ActiveEditorTracker.sharedTracker.ForceRebuild();
+            SceneView.RepaintAll();
+            MarkToolDirty();
 
-            e.Use();
+            currentEvent.Use();
+            return;
         }
 
+        if (currentEvent.type != EventType.MouseDown || currentEvent.button != 0)
+        {
+            return;
+        }
+
+        Ray ray = HandleUtility.GUIPointToWorldRay(currentEvent.mousePosition);
+        Plane plane = new Plane(Vector3.forward, new Vector3(0f, 0f, _tool.GridPlaneZ));
+
+        if (plane.Raycast(ray, out float distance))
+        {
+            Vector3 worldPosition = ray.GetPoint(distance);
+
+            if (_tool.HandleSceneClick(worldPosition))
+            {
+                MarkToolDirty();
+                SceneView.RepaintAll();
+            }
+        }
+
+        currentEvent.Use();
+    }
+
+    private void MarkToolDirty()
+    {
+        EditorUtility.SetDirty(_tool);
+
+        if (_tool.gameObject.scene.IsValid())
+        {
+            EditorSceneManager.MarkSceneDirty(_tool.gameObject.scene);
+        }
     }
 }
