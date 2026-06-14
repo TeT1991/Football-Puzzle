@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+using System;
 using UnityEngine;
 
 public class CellSelector : MonoBehaviour
@@ -8,27 +8,43 @@ public class CellSelector : MonoBehaviour
     private float _gridPositionOffsestY;
     private Camera _camera;
 
+    private Vector3 _mouseWorldPosition;
+    private bool _isSelecting = false;
+    private CellView _selectedCell; //Потом надо передавать дату а не вью
+
+    public Action CellSelected;
+
     private void Awake()
     {
         _camera = Camera.main;
     }
 
-    public void Init(CellView[,] cells, float gridPositionOffsestX, float gridPositionOffsestY)
+    public void Init(CellView[,] cells)
     {
         _cells = cells;
-        _gridPositionOffsestX = gridPositionOffsestX;
-        _gridPositionOffsestY = gridPositionOffsestY;
+        _gridPositionOffsestX = GameUtility.CalculateGridOffset(_cells.GetLength(0));
+        _gridPositionOffsestY = GameUtility.CalculateGridOffset(_cells.GetLength(1));
     }
 
     public void Update()
     {
-        //_mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
+        if (_isSelecting)
+        {
+            _mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
+            // подсветить клетки прри наведении
 
-        //if (TryGetCell(GameUtility.ConvertMousePositionToCoordinates(_mouseWorldPosition, _gridPositionOffsestX, _gridPositionOffsestY),
-        //    out CellView cell))
-        //{
-        //    Debug.Log(cell.name);
-        //}
+            if (Input.GetMouseButtonUp(0))
+            {
+                if (TryGetCell(_mouseWorldPosition,
+                    out CellView cell))
+                {
+                    _selectedCell = cell;
+                    // StopSelecting();
+                    Debug.Log(cell.Coordinates);
+                }
+            }
+
+        }
     }
 
     public bool TryGetCell(Vector2 position, out CellView cell)
@@ -48,5 +64,21 @@ public class CellSelector : MonoBehaviour
 
         cell = _cells[x, y];
         return true;
+    }
+
+    public void StartSelecting()
+    {
+        _selectedCell = null;
+        _isSelecting = true;
+    }
+
+    public void StopSelecting()
+    {
+        _isSelecting = false;
+    }
+
+    private void OnCellSelected()
+    {
+        CellSelected?.Invoke();
     }
 }

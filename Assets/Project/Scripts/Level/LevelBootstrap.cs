@@ -30,7 +30,11 @@ public class LevelBootstrap : MonoBehaviour
         _entityCreator = new(_characterParent, _entityViewPrefab);
         CreateCharacter(out EntityView character);
 
+        _cellSelector.Init((CellView[,])_cells.Clone());
+
         _levelProcessor.Init(character ,_cellSelector);
+
+        _levelProcessor.StartLevel(); //после всех инициализиаций
     }
 
     private LevelData GenerateLevelData()
@@ -49,7 +53,7 @@ public class LevelBootstrap : MonoBehaviour
 
         float xPosition = _levelDefenition.CharacterPosition.x - gridOffsetX;
         float yPosition = _levelDefenition.CharacterPosition.y - gridOffsetY;
-        Vector2 offsetedPosition = new Vector2(xPosition, yPosition);
+        Vector2 offsetedPosition = new (xPosition, yPosition);
 
         character = _entityCreator.CreateEntity(offsetedPosition);
     }
