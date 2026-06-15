@@ -11,6 +11,7 @@ public class LevelDefinition : ScriptableObject
     [SerializeField] private Vector2Int _characterPosition;
 
     [SerializeField] private List<Vector2Int> _enemyPositions = new();
+    [SerializeField] private Route _testRoute = new();
 
     public int Width => _width;
     public int Height => _height;
@@ -18,6 +19,7 @@ public class LevelDefinition : ScriptableObject
     public bool HasCharacter => _hasCharacter;
     public Vector2Int CharacterPosition => _characterPosition;
     public IReadOnlyList<Vector2Int> EnemyPositions => _enemyPositions;
+    public Route TestRoute => _testRoute;
 
     public void UpdateData(LevelData levelData)
     {
@@ -100,6 +102,11 @@ public class LevelDefinition : ScriptableObject
         if (_enemyPositions == null)
         {
             _enemyPositions = new List<Vector2Int>();
+        }
+
+        if (_testRoute == null)
+        {
+            _testRoute = new Route();
         }
     }
 }

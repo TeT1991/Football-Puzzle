@@ -10,9 +10,11 @@ public class CellSelector : MonoBehaviour
 
     private Vector3 _mouseWorldPosition;
     private bool _isSelecting = false;
-    private CellView _selectedCell; //Потом надо передавать дату а не вью
+    private CellView _currentCell; //Потом надо передавать дату а не вью
 
-    public Action CellSelected;
+    public Action<CellView> CellSelected;
+
+    public CellView CurrentCell => _currentCell;
 
     private void Awake()
     {
@@ -38,7 +40,8 @@ public class CellSelector : MonoBehaviour
                 if (TryGetCell(_mouseWorldPosition,
                     out CellView cell))
                 {
-                    _selectedCell = cell;
+                    _currentCell = cell;
+                    CellSelected?.Invoke(cell);
                     // StopSelecting();
                     Debug.Log(cell.Coordinates);
                 }
@@ -68,7 +71,7 @@ public class CellSelector : MonoBehaviour
 
     public void StartSelecting()
     {
-        _selectedCell = null;
+        _currentCell = null;
         _isSelecting = true;
     }
 
@@ -77,8 +80,13 @@ public class CellSelector : MonoBehaviour
         _isSelecting = false;
     }
 
+    public void ClearCurrentCell()
+    {
+        _currentCell = null;
+    }
+
     private void OnCellSelected()
     {
-        CellSelected?.Invoke();
+        CellSelected?.Invoke(_currentCell);
     }
 }

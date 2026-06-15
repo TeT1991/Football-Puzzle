@@ -12,6 +12,7 @@ public class LevelBootstrap : MonoBehaviour
 
     private GridBuilder _gridBuilder;
     private EntityCreator _entityCreator;
+    private EntityRouteRegistry _entityRouteRegistry;
     private SkinLoader _skinLoader; //Нужен ли?
 
     private CellView[,] _cells;
@@ -29,10 +30,15 @@ public class LevelBootstrap : MonoBehaviour
 
         _entityCreator = new(_characterParent, _entityViewPrefab);
         CreateCharacter(out EntityView character);
+        _entityRouteRegistry = new();
+        _entityRouteRegistry.AddRoute(character, _levelDefenition.TestRoute);
 
         _cellSelector.Init((CellView[,])_cells.Clone());
 
-        _levelProcessor.Init(character ,_cellSelector);
+        _levelProcessor.Init(character ,_cellSelector, _entityRouteRegistry);
+
+
+
 
         _levelProcessor.StartLevel(); //после всех инициализиаций
     }
@@ -55,7 +61,8 @@ public class LevelBootstrap : MonoBehaviour
         float yPosition = _levelDefenition.CharacterPosition.y - gridOffsetY;
         Vector2 offsetedPosition = new (xPosition, yPosition);
 
-        character = _entityCreator.CreateEntity(offsetedPosition);
+        character = _entityCreator.CreateEntity(offsetedPosition, _levelDefenition.CharacterPosition);
+
     }
 }
 
@@ -70,12 +77,12 @@ public class EntityCreator
         _character = entityPrefab;
     }
 
-    public EntityView CreateEntity(Vector2 position)
+    public EntityView CreateEntity(Vector2 position, Vector2Int coordinates)
     {
         EntityView entity = MonoBehaviour.Instantiate(_character);
         entity.transform.SetParent(_entitiesParent, false);
         entity.transform.position = position;
-        entity.Init();
+        entity.Init(coordinates);
 
         return entity;
     }
