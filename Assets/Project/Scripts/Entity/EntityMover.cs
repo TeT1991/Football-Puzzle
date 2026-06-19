@@ -1,9 +1,12 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
 public class EntityMover 
 {
     private EntityView _view;
+
+    public event Action TargetPositionReached;
 
     public EntityMover(EntityView view)
     {
@@ -24,5 +27,6 @@ public class EntityMover
         }
 
         _view.transform.position = targetPosition;
+        TargetPositionReached?.Invoke();
     }
 }

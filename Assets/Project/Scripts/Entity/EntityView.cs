@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class EntityView : MonoBehaviour
@@ -8,13 +9,22 @@ public class EntityView : MonoBehaviour
     private Coroutine _coroutine;
     private float _animationDuration;
 
+    public event Action TargetPositionReached;
+
     public Vector2Int CurrentCoordinates => _currentCoordinates;
+
+    private void OnDestroy()
+    {
+        _entityMover.TargetPositionReached -= OnTargetPositionReached;
+    }
 
     public void Init(Vector2Int coordinates)
     {
         _entityMover = new(this);
         _animationDuration = 1f;
         SetCurrentCoordinates(coordinates);
+
+        _entityMover.TargetPositionReached += OnTargetPositionReached;
     }
 
     public void StartMove(Vector3 targerPosition)
@@ -25,5 +35,11 @@ public class EntityView : MonoBehaviour
     public void SetCurrentCoordinates(Vector2Int coordinates)
     {
         _currentCoordinates = coordinates;
+    }
+
+    private void OnTargetPositionReached()
+    {
+        StopCoroutine(_coroutine);
+        TargetPositionReached?.Invoke();
     }
 }

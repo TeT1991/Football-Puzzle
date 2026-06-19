@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class LevelBootstrap : MonoBehaviour
@@ -13,9 +15,12 @@ public class LevelBootstrap : MonoBehaviour
     private GridBuilder _gridBuilder;
     private EntityCreator _entityCreator;
     private EntityRouteRegistry _entityRouteRegistry;
+    private EntetiesMovementProcessor _entetiesMovementProcessor;
     private SkinLoader _skinLoader; //Нужен ли?
 
     private CellView[,] _cells;
+
+    private List<IDisposable> _disposables;
 
     private void Awake()
     {
@@ -32,13 +37,15 @@ public class LevelBootstrap : MonoBehaviour
         CreateCharacter(out EntityView character);
         _entityRouteRegistry = new();
         _entityRouteRegistry.AddRoute(character, _levelDefenition.TestRoute);
+        _entetiesMovementProcessor = new(character);
 
         _cellSelector.Init((CellView[,])_cells.Clone());
 
-        _levelProcessor.Init(character ,_cellSelector, _entityRouteRegistry);
+        _levelProcessor.Init(character ,_cellSelector, _entityRouteRegistry, _entetiesMovementProcessor);
 
 
-
+        _disposables = new();
+        _disposables.Add(_entetiesMovementProcessor);
 
         _levelProcessor.StartLevel(); //после всех инициализиаций
     }
@@ -63,6 +70,14 @@ public class LevelBootstrap : MonoBehaviour
 
         character = _entityCreator.CreateEntity(offsetedPosition, _levelDefenition.CharacterPosition);
 
+    }
+
+    private void OnDestroy()
+    {
+        foreach (IDisposable disposable in _disposables)
+        {
+            disposable.Dispose();
+        }
     }
 }
 
