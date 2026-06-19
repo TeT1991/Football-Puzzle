@@ -18,6 +18,7 @@ public class LevelProcessor : MonoBehaviour
     private void OnDestroy()
     {
         _cellSelector.CellSelected -= TryMoveCharacter;
+        _entetiesMovementProcessor.CharacterMovementStopped -= OnCharacterMovementStopped;
     }
 
     public void Init(EntityView character, CellSelector cellSelector, EntityRouteRegistry entityRouteRegistry, EntetiesMovementProcessor entetiesMovementProcessor)
@@ -34,8 +35,6 @@ public class LevelProcessor : MonoBehaviour
     public void StartLevel() //Дает возможность играть когда все инициализировалось. Нужо ли?
     {
         SetLevelState(LevelState.PlayerTurn);
-        Debug.Log("Player turn");
-
         ApplyStateActions();
     }
 
@@ -51,6 +50,8 @@ public class LevelProcessor : MonoBehaviour
                 ApplyEnemyTurnState();
                 break;
         }
+
+        Debug.Log(_levelState);
     }
 
     private void ApplyPlayerTurnState()
@@ -68,9 +69,8 @@ public class LevelProcessor : MonoBehaviour
         if (CanMove(cellView))
         {
             _cellSelector.StopSelecting();
-            _cellSelector.ClearCurrentCell();
             _entetiesMovementProcessor.StartCharacterMovement(cellView.transform.position);
-            _characterView.SetCurrentCoordinates(cellView.Coordinates);
+           
 
         }
     }
@@ -99,8 +99,11 @@ public class LevelProcessor : MonoBehaviour
 
     private void OnCharacterMovementStopped()
     {
-        Debug.Log("2222");
+        Debug.Log(_cellSelector.CurrentCell);
+        _characterView.SetCurrentCoordinates(_cellSelector.CurrentCell.Coordinates);
+        _cellSelector.ClearCurrentCell();
         SetLevelState(LevelState.EnemyTurn);
+        Debug.Log(_cellSelector);
     }
 
     private void OnEnemiesMovementStopped()
@@ -133,7 +136,7 @@ public class EntetiesMovementProcessor : IDisposable
 
     public void Dispose()
     {
-        throw new NotImplementedException();
+        _character.TargetPositionReached -= OnCharacterMovementStopped;
     }
 }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(menuName = "Football Puzzle/Level")]
 public class LevelDefinition : ScriptableObject
@@ -11,7 +12,8 @@ public class LevelDefinition : ScriptableObject
     [SerializeField] private Vector2Int _characterPosition;
 
     [SerializeField] private List<Vector2Int> _enemyPositions = new();
-    [SerializeField] private Route _testRoute = new();
+    [FormerlySerializedAs("_testRoute")]
+    [SerializeField] private Route _route = new();
 
     public int Width => _width;
     public int Height => _height;
@@ -19,7 +21,7 @@ public class LevelDefinition : ScriptableObject
     public bool HasCharacter => _hasCharacter;
     public Vector2Int CharacterPosition => _characterPosition;
     public IReadOnlyList<Vector2Int> EnemyPositions => _enemyPositions;
-    public Route TestRoute => _testRoute;
+    public Route TestRoute => _route;
 
     public void UpdateData(LevelData levelData)
     {
@@ -104,9 +106,9 @@ public class LevelDefinition : ScriptableObject
             _enemyPositions = new List<Vector2Int>();
         }
 
-        if (_testRoute == null)
+        if (_route == null)
         {
-            _testRoute = new Route();
+            _route = new Route();
         }
     }
 }

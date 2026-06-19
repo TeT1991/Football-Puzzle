@@ -39,7 +39,6 @@ public class EntityView : MonoBehaviour
 
     private void OnTargetPositionReached()
     {
-        StopCoroutine(_coroutine);
         TargetPositionReached?.Invoke();
     }
 }
