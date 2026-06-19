@@ -9,13 +9,19 @@ public class LevelEditorToolEditor : Editor
 {
     private const float CellHalfSize = 0.5f;
     private const float PlayerPathLineWidth = 5f;
+    private const float GoalMarkerLineWidth = 3f;
+    private const float GoalMarkerOuterRadius = 0.32f;
+    private const float GoalMarkerInnerRadius = 0.14f;
 
     private static readonly Color PlayerPathColor = new(0.05f, 0.45f, 1f, 0.5f);
+    private static readonly Color GoalMarkerColor = new(1f, 0.75f, 0.05f, 0.9f);
+    private static readonly Color GoalMarkerFillColor = new(1f, 0.75f, 0.05f, 0.35f);
 
     private LevelEditorTool _tool;
     private LevelEditorAssetUtility _assetUtility;
 
     private bool _isDrawingPlayerPath;
+    private bool _isSelectingLevelGoal;
     private bool _showPlayerPaths = true;
     private bool _isPathDragging;
     private int _pathDragButton = -1;
@@ -33,6 +39,7 @@ public class LevelEditorToolEditor : Editor
     private void OnDisable()
     {
         EndPathDrag();
+        _isSelectingLevelGoal = false;
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
@@ -49,6 +56,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Create / Rebuild Level"))
         {
             StopPlayerPathDrawing();
+            StopLevelGoalSelection();
             _tool.CreateLevel();
             MarkToolDirty();
         }
@@ -56,6 +64,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Clear Scene Level"))
         {
             StopPlayerPathDrawing();
+            StopLevelGoalSelection();
             _tool.ClearLevel();
             MarkToolDirty();
         }
@@ -65,6 +74,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Place EntityView"))
         {
             StopPlayerPathDrawing();
+            StopLevelGoalSelection();
             _tool.StartPlacingCharacter();
             SceneView.RepaintAll();
             MarkToolDirty();
@@ -73,6 +83,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Place Enemy"))
         {
             StopPlayerPathDrawing();
+            StopLevelGoalSelection();
             _tool.StartPlacingEnemy();
             SceneView.RepaintAll();
             MarkToolDirty();
@@ -85,6 +96,8 @@ public class LevelEditorToolEditor : Editor
             MarkToolDirty();
         }
 
+        EditorGUILayout.Space(8);
+        DrawLevelGoalControls();
         EditorGUILayout.Space(8);
         DrawPlayerPathControls();
         EditorGUILayout.Space(8);
@@ -102,6 +115,14 @@ public class LevelEditorToolEditor : Editor
 
     private void DrawModeInfo()
     {
+        if (_isSelectingLevelGoal)
+        {
+            EditorGUILayout.HelpBox(
+                "Mode: Select Level Goal. Click a cell in Scene View. Esc - cancel.",
+                MessageType.Info);
+            return;
+        }
+
         if (_isDrawingPlayerPath)
         {
             EditorGUILayout.HelpBox(
@@ -128,6 +149,66 @@ public class LevelEditorToolEditor : Editor
                     MessageType.Info);
                 break;
         }
+    }
+
+    private void DrawLevelGoalControls()
+    {
+        EditorGUILayout.LabelField("Level Goal", EditorStyles.boldLabel);
+
+        LevelDefinition definition = _tool.LevelDefinition;
+        string coordinates = definition != null && definition.HasGoal
+            ? definition.GoalCoordinates.ToString()
+            : "Not selected";
+
+        EditorGUILayout.LabelField("Goal Coordinates", coordinates);
+
+        using (new EditorGUI.DisabledScope(_isSelectingLevelGoal))
+        {
+            if (GUILayout.Button("Select Level Goal"))
+            {
+                StartLevelGoalSelection();
+            }
+        }
+    }
+
+    private void StartLevelGoalSelection()
+    {
+        StopPlayerPathDrawing();
+        _tool.StopPlacement();
+        _tool.ApplySceneToDefinition();
+
+        if (_tool.LevelDefinition == null)
+        {
+            Debug.LogWarning("Assign or create a LevelDefinition before selecting a level goal.");
+            return;
+        }
+
+        if (GetSceneCells().Length == 0)
+        {
+            _tool.CreateLevel();
+        }
+
+        if (GetSceneCells().Length == 0)
+        {
+            Debug.LogWarning("The scene grid is not available for selecting a level goal.");
+            return;
+        }
+
+        _isSelectingLevelGoal = true;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void StopLevelGoalSelection()
+    {
+        if (_isSelectingLevelGoal == false)
+        {
+            return;
+        }
+
+        _isSelectingLevelGoal = false;
+        SceneView.RepaintAll();
+        Repaint();
     }
 
     private void DrawPlayerPathControls()
@@ -161,6 +242,7 @@ public class LevelEditorToolEditor : Editor
 
     private void StartPlayerPathDrawing()
     {
+        StopLevelGoalSelection();
         _tool.StopPlacement();
         _tool.ApplySceneToDefinition();
 
@@ -252,8 +334,15 @@ public class LevelEditorToolEditor : Editor
         }
 
         DrawPlayerPaths();
+        DrawLevelGoalMarker();
 
         Event currentEvent = Event.current;
+
+        if (_isSelectingLevelGoal)
+        {
+            HandleLevelGoalInput(currentEvent);
+            return;
+        }
 
         if (_isDrawingPlayerPath)
         {
@@ -289,6 +378,44 @@ public class LevelEditorToolEditor : Editor
         if (TryGetWorldPosition(currentEvent.mousePosition, out Vector3 worldPosition) &&
             _tool.HandleSceneClick(worldPosition))
         {
+            MarkToolDirty();
+            SceneView.RepaintAll();
+        }
+
+        currentEvent.Use();
+    }
+
+    private void HandleLevelGoalInput(Event currentEvent)
+    {
+        if (currentEvent.type == EventType.Layout)
+        {
+            HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+            return;
+        }
+
+        if (currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+        {
+            StopLevelGoalSelection();
+            currentEvent.Use();
+            return;
+        }
+
+        if (currentEvent.alt ||
+            currentEvent.type != EventType.MouseDown ||
+            currentEvent.button != 0)
+        {
+            return;
+        }
+
+        if (TryGetCellAtGuiPoint(currentEvent.mousePosition, out CellView cell))
+        {
+            LevelDefinition definition = _tool.LevelDefinition;
+
+            Undo.RecordObject(definition, "Select Level Goal");
+            definition.SetGoal(cell.Coordinates);
+            EditorUtility.SetDirty(definition);
+
+            StopLevelGoalSelection();
             MarkToolDirty();
             SceneView.RepaintAll();
         }
@@ -507,6 +634,51 @@ public class LevelEditorToolEditor : Editor
                     endPosition);
             }
         }
+
+        Handles.color = previousColor;
+        Handles.zTest = previousZTest;
+    }
+
+    private void DrawLevelGoalMarker()
+    {
+        LevelDefinition definition = _tool.LevelDefinition;
+
+        if (definition == null ||
+            definition.HasGoal == false ||
+            TryGetCellByCoordinates(definition.GoalCoordinates, out CellView cell) == false)
+        {
+            return;
+        }
+
+        Vector3 center = cell.transform.position;
+        Vector3[] points = new Vector3[11];
+
+        for (int i = 0; i < 10; i++)
+        {
+            float radius = i % 2 == 0 ? GoalMarkerOuterRadius : GoalMarkerInnerRadius;
+            float angle = Mathf.PI * 0.5f + i * Mathf.PI / 5f;
+
+            points[i] = center + new Vector3(
+                Mathf.Cos(angle) * radius,
+                Mathf.Sin(angle) * radius,
+                0f);
+        }
+
+        points[10] = points[0];
+
+        Color previousColor = Handles.color;
+        CompareFunction previousZTest = Handles.zTest;
+
+        Handles.zTest = CompareFunction.Always;
+        Handles.color = GoalMarkerFillColor;
+
+        for (int i = 0; i < 10; i++)
+        {
+            Handles.DrawAAConvexPolygon(center, points[i], points[i + 1]);
+        }
+
+        Handles.color = GoalMarkerColor;
+        Handles.DrawAAPolyLine(GoalMarkerLineWidth, points);
 
         Handles.color = previousColor;
         Handles.zTest = previousZTest;

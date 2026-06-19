@@ -11,6 +11,9 @@ public class LevelDefinition : ScriptableObject
     [SerializeField] private bool _hasCharacter;
     [SerializeField] private Vector2Int _characterPosition;
 
+    [SerializeField, HideInInspector] private bool _hasGoal;
+    [SerializeField] private Vector2Int _goalCoordinates;
+
     [SerializeField] private List<Vector2Int> _enemyPositions = new();
     [FormerlySerializedAs("_testRoute")]
     [SerializeField] private Route _route = new();
@@ -20,12 +23,15 @@ public class LevelDefinition : ScriptableObject
 
     public bool HasCharacter => _hasCharacter;
     public Vector2Int CharacterPosition => _characterPosition;
+    public bool HasGoal => _hasGoal;
+    public Vector2Int GoalCoordinates => _goalCoordinates;
     public IReadOnlyList<Vector2Int> EnemyPositions => _enemyPositions;
     public Route TestRoute => _route;
 
     public void UpdateData(LevelData levelData)
     {
         SetSize(levelData.Width, levelData.Height);
+        ValidateGoal();
     }
 
     public void SetData(
@@ -39,6 +45,8 @@ public class LevelDefinition : ScriptableObject
 
         _hasCharacter = hasCharacter;
         _characterPosition = characterPosition;
+
+        ValidateGoal();
 
         _enemyPositions.Clear();
 
@@ -81,6 +89,31 @@ public class LevelDefinition : ScriptableObject
             source.HasCharacter,
             source.CharacterPosition,
             source.EnemyPositions);
+
+        if (source.HasGoal)
+        {
+            SetGoal(source.GoalCoordinates);
+        }
+        else
+        {
+            ClearGoal();
+        }
+    }
+
+    public void SetGoal(Vector2Int coordinates)
+    {
+        if (IsInsideGrid(coordinates) == false)
+        {
+            return;
+        }
+
+        _goalCoordinates = coordinates;
+        _hasGoal = true;
+    }
+
+    public void ClearGoal()
+    {
+        _hasGoal = false;
     }
 
     private void SetSize(int width, int height)
@@ -97,9 +130,18 @@ public class LevelDefinition : ScriptableObject
                position.y < _height;
     }
 
+    private void ValidateGoal()
+    {
+        if (_hasGoal && IsInsideGrid(_goalCoordinates) == false)
+        {
+            _hasGoal = false;
+        }
+    }
+
     private void OnValidate()
     {
         SetSize(_width, _height);
+        ValidateGoal();
 
         if (_enemyPositions == null)
         {

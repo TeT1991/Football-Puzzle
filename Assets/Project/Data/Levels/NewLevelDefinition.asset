@@ -16,6 +16,8 @@ MonoBehaviour:
   _height: 10
   _hasCharacter: 1
   _characterPosition: {x: 4, y: 1}
+  _hasGoal: 1
+  _goalCoordinates: {x: 2, y: 9}
   _enemyPositions:
   - {x: 4, y: 7}
   - {x: 4, y: 6}

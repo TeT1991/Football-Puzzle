@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class CellView : MonoBehaviour
 {
-    private Vector2Int _coordinates;
+    [SerializeField] private Vector2Int _coordinates;
 
     public Vector2Int Coordinates => _coordinates;
 
