@@ -9,6 +9,7 @@ public class LevelEditorToolEditor : Editor
 {
     private const float CellHalfSize = 0.5f;
     private const float PlayerPathLineWidth = 5f;
+    private const float EnemyPathLineWidth = 6.5f;
     private const float GoalMarkerLineWidth = 3f;
     private const float GoalMarkerOuterRadius = 0.32f;
     private const float GoalMarkerInnerRadius = 0.14f;
@@ -21,12 +22,19 @@ public class LevelEditorToolEditor : Editor
     private LevelEditorAssetUtility _assetUtility;
 
     private bool _isDrawingPlayerPath;
+    private bool _isSelectingEnemyForPath;
+    private bool _isDrawingEnemyPath;
     private bool _isSelectingLevelGoal;
     private bool _showPlayerPaths = true;
     private bool _isPathDragging;
     private int _pathDragButton = -1;
     private int _pathUndoGroup = -1;
     private CellView _lastPathCell;
+    private bool _isEnemyPathDragging;
+    private int _enemyPathDragButton = -1;
+    private int _enemyPathUndoGroup = -1;
+    private CellView _lastEnemyPathCell;
+    private LevelEditorPlacedObject _selectedEnemy;
 
     private void OnEnable()
     {
@@ -39,6 +47,7 @@ public class LevelEditorToolEditor : Editor
     private void OnDisable()
     {
         EndPathDrag();
+        StopEnemyPathDrawing();
         _isSelectingLevelGoal = false;
         SceneView.duringSceneGui -= OnSceneGUI;
     }
@@ -56,6 +65,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Create / Rebuild Level"))
         {
             StopPlayerPathDrawing();
+            StopEnemyPathDrawing();
             StopLevelGoalSelection();
             _tool.CreateLevel();
             MarkToolDirty();
@@ -64,6 +74,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Clear Scene Level"))
         {
             StopPlayerPathDrawing();
+            StopEnemyPathDrawing();
             StopLevelGoalSelection();
             _tool.ClearLevel();
             MarkToolDirty();
@@ -74,6 +85,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Place EntityView"))
         {
             StopPlayerPathDrawing();
+            StopEnemyPathDrawing();
             StopLevelGoalSelection();
             _tool.StartPlacingCharacter();
             SceneView.RepaintAll();
@@ -83,6 +95,7 @@ public class LevelEditorToolEditor : Editor
         if (GUILayout.Button("Place Enemy"))
         {
             StopPlayerPathDrawing();
+            StopEnemyPathDrawing();
             StopLevelGoalSelection();
             _tool.StartPlacingEnemy();
             SceneView.RepaintAll();
@@ -101,6 +114,8 @@ public class LevelEditorToolEditor : Editor
         EditorGUILayout.Space(8);
         DrawPlayerPathControls();
         EditorGUILayout.Space(8);
+        DrawEnemyPathControls();
+        EditorGUILayout.Space(8);
 
         if (GUILayout.Button("Save"))
         {
@@ -115,6 +130,22 @@ public class LevelEditorToolEditor : Editor
 
     private void DrawModeInfo()
     {
+        if (_isSelectingEnemyForPath)
+        {
+            EditorGUILayout.HelpBox(
+                "Mode: Select Enemy. Click an enemy in Scene View. Esc - cancel.",
+                MessageType.Info);
+            return;
+        }
+
+        if (_isDrawingEnemyPath)
+        {
+            EditorGUILayout.HelpBox(
+                "Mode: Draw Enemy Path. Start at the route end. LMB drag extends, RMB drag erases from the end, Esc stops drawing.",
+                MessageType.Info);
+            return;
+        }
+
         if (_isSelectingLevelGoal)
         {
             EditorGUILayout.HelpBox(
@@ -174,6 +205,7 @@ public class LevelEditorToolEditor : Editor
     private void StartLevelGoalSelection()
     {
         StopPlayerPathDrawing();
+        StopEnemyPathDrawing();
         _tool.StopPlacement();
         _tool.ApplySceneToDefinition();
 
@@ -243,6 +275,7 @@ public class LevelEditorToolEditor : Editor
     private void StartPlayerPathDrawing()
     {
         StopLevelGoalSelection();
+        StopEnemyPathDrawing();
         _tool.StopPlacement();
         _tool.ApplySceneToDefinition();
 
@@ -295,6 +328,90 @@ public class LevelEditorToolEditor : Editor
         Repaint();
     }
 
+    private void DrawEnemyPathControls()
+    {
+        EditorGUILayout.LabelField("Enemy Path", EditorStyles.boldLabel);
+
+        using (new EditorGUI.DisabledScope(
+                   _isSelectingEnemyForPath || _isDrawingEnemyPath))
+        {
+            if (GUILayout.Button("Select Enemy To Draw Path"))
+            {
+                StartEnemyPathSelection();
+            }
+        }
+
+        using (new EditorGUI.DisabledScope(
+                   _isSelectingEnemyForPath == false && _isDrawingEnemyPath == false))
+        {
+            if (GUILayout.Button("Stop Draw Enemy Path"))
+            {
+                StopEnemyPathDrawing();
+            }
+        }
+    }
+
+    private void StartEnemyPathSelection()
+    {
+        StopPlayerPathDrawing();
+        StopLevelGoalSelection();
+        StopEnemyPathDrawing();
+        _tool.StopPlacement();
+        _tool.ApplySceneToDefinition();
+
+        LevelDefinition definition = _tool.LevelDefinition;
+
+        if (definition == null || definition.EnemyPositions.Count == 0)
+        {
+            Debug.LogWarning("Place at least one enemy before drawing an enemy path.");
+            return;
+        }
+
+        _isSelectingEnemyForPath = true;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void SelectEnemyForPath(LevelEditorPlacedObject enemy)
+    {
+        if (enemy == null || enemy.Type != LevelEditorObjectType.Enemy)
+        {
+            return;
+        }
+
+        _selectedEnemy = enemy;
+        _isSelectingEnemyForPath = false;
+        _isDrawingEnemyPath = true;
+
+        EnemyPathEditorUtility.EnsurePath(
+            _tool.LevelDefinition,
+            enemy.Coordinates);
+
+        ApplySelectedEnemyColor();
+        ResetEnemyPathDrag();
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void StopEnemyPathDrawing()
+    {
+        if (_isSelectingEnemyForPath == false &&
+            _isDrawingEnemyPath == false &&
+            _selectedEnemy == null &&
+            _isEnemyPathDragging == false)
+        {
+            return;
+        }
+
+        EndEnemyPathDrag();
+        _selectedEnemy = null;
+        _isSelectingEnemyForPath = false;
+        _isDrawingEnemyPath = false;
+
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
     private void SaveCurrent()
     {
         _tool.ApplySceneToDefinition();
@@ -334,9 +451,22 @@ public class LevelEditorToolEditor : Editor
         }
 
         DrawPlayerPaths();
+        DrawEnemyPaths();
         DrawLevelGoalMarker();
 
         Event currentEvent = Event.current;
+
+        if (_isSelectingEnemyForPath)
+        {
+            HandleEnemySelectionInput(currentEvent);
+            return;
+        }
+
+        if (_isDrawingEnemyPath)
+        {
+            HandleEnemyPathInput(currentEvent);
+            return;
+        }
 
         if (_isSelectingLevelGoal)
         {
@@ -383,6 +513,179 @@ public class LevelEditorToolEditor : Editor
         }
 
         currentEvent.Use();
+    }
+
+    private void HandleEnemySelectionInput(Event currentEvent)
+    {
+        if (currentEvent.type == EventType.Layout)
+        {
+            HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+            return;
+        }
+
+        if (currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+        {
+            StopEnemyPathDrawing();
+            currentEvent.Use();
+            return;
+        }
+
+        if (currentEvent.alt ||
+            currentEvent.type != EventType.MouseDown ||
+            currentEvent.button != 0)
+        {
+            return;
+        }
+
+        if (TryGetEnemyAtGuiPoint(currentEvent.mousePosition, out LevelEditorPlacedObject enemy))
+        {
+            SelectEnemyForPath(enemy);
+        }
+        else
+        {
+            Debug.LogWarning("Click an enemy to draw its path.");
+        }
+
+        currentEvent.Use();
+    }
+
+    private void HandleEnemyPathInput(Event currentEvent)
+    {
+        if (currentEvent.type == EventType.Layout)
+        {
+            HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+            return;
+        }
+
+        if (currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+        {
+            StopEnemyPathDrawing();
+            currentEvent.Use();
+            return;
+        }
+
+        if (currentEvent.alt)
+        {
+            return;
+        }
+
+        if (_selectedEnemy == null)
+        {
+            StopEnemyPathDrawing();
+            return;
+        }
+
+        if (currentEvent.type == EventType.MouseDown &&
+            (currentEvent.button == 0 || currentEvent.button == 1))
+        {
+            if (TryGetCellAtGuiPoint(currentEvent.mousePosition, out CellView cell) &&
+                CanBeginEnemyPathDrag(cell))
+            {
+                BeginEnemyPathDrag(cell, currentEvent.button);
+                currentEvent.Use();
+            }
+
+            return;
+        }
+
+        if (currentEvent.type == EventType.MouseDrag && _isEnemyPathDragging)
+        {
+            if (TryGetCellAtGuiPoint(currentEvent.mousePosition, out CellView cell))
+            {
+                HandleEnemyPathDrag(cell);
+            }
+
+            currentEvent.Use();
+            return;
+        }
+
+        if (currentEvent.type == EventType.MouseUp && _isEnemyPathDragging)
+        {
+            EndEnemyPathDrag();
+            currentEvent.Use();
+        }
+    }
+
+    private bool CanBeginEnemyPathDrag(CellView cell)
+    {
+        if (cell == null || _selectedEnemy == null)
+        {
+            return false;
+        }
+
+        List<Vector2Int> path = EnemyPathEditorUtility.ReadPath(
+            _tool.LevelDefinition,
+            _selectedEnemy.Coordinates);
+
+        if (EnemyPathEditorUtility.IsEndpoint(path, cell.Coordinates))
+        {
+            return true;
+        }
+
+        Debug.LogWarning("Continue or erase an enemy path from its end point.");
+        return false;
+    }
+
+    private void BeginEnemyPathDrag(CellView cell, int mouseButton)
+    {
+        Undo.IncrementCurrentGroup();
+        _enemyPathUndoGroup = Undo.GetCurrentGroup();
+        Undo.SetCurrentGroupName(mouseButton == 0 ? "Draw Enemy Path" : "Erase Enemy Path");
+
+        _isEnemyPathDragging = true;
+        _enemyPathDragButton = mouseButton;
+        _lastEnemyPathCell = cell;
+    }
+
+    private void HandleEnemyPathDrag(CellView cell)
+    {
+        if (cell == null ||
+            _lastEnemyPathCell == null ||
+            cell == _lastEnemyPathCell ||
+            _selectedEnemy == null)
+        {
+            return;
+        }
+
+        Vector2Int previousCoordinates = _lastEnemyPathCell.Coordinates;
+        Vector2Int currentCoordinates = cell.Coordinates;
+        bool changed = _enemyPathDragButton == 0
+            ? EnemyPathEditorUtility.Append(
+                _tool.LevelDefinition,
+                _selectedEnemy.Coordinates,
+                currentCoordinates)
+            : EnemyPathEditorUtility.RemoveLastSegment(
+                _tool.LevelDefinition,
+                _selectedEnemy.Coordinates,
+                previousCoordinates,
+                currentCoordinates);
+
+        if (changed == false)
+        {
+            return;
+        }
+
+        _lastEnemyPathCell = cell;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void EndEnemyPathDrag()
+    {
+        if (_enemyPathUndoGroup >= 0)
+        {
+            Undo.CollapseUndoOperations(_enemyPathUndoGroup);
+        }
+
+        ResetEnemyPathDrag();
+    }
+
+    private void ResetEnemyPathDrag()
+    {
+        _isEnemyPathDragging = false;
+        _enemyPathDragButton = -1;
+        _enemyPathUndoGroup = -1;
+        _lastEnemyPathCell = null;
     }
 
     private void HandleLevelGoalInput(Event currentEvent)
@@ -639,6 +942,77 @@ public class LevelEditorToolEditor : Editor
         Handles.zTest = previousZTest;
     }
 
+    private void DrawEnemyPaths()
+    {
+        LevelDefinition definition = _tool.LevelDefinition;
+
+        if (definition == null || definition.EnemyRoutes == null)
+        {
+            return;
+        }
+
+        Dictionary<Vector2Int, Vector3> positions = new();
+
+        foreach (CellView cell in GetSceneCells())
+        {
+            if (cell != null)
+            {
+                positions[cell.Coordinates] = cell.transform.position;
+            }
+        }
+
+        Color previousColor = Handles.color;
+        CompareFunction previousZTest = Handles.zTest;
+        Handles.zTest = CompareFunction.Always;
+
+        foreach (EnemyRoute route in definition.EnemyRoutes)
+        {
+            if (route == null || route.Coordinates.Count < 2)
+            {
+                continue;
+            }
+
+            Color pathColor = GetEnemyColor(route.EnemyStartCoordinates);
+            pathColor.a = 1f;
+            Handles.color = pathColor;
+
+            for (int i = 1; i < route.Coordinates.Count; i++)
+            {
+                if (positions.TryGetValue(route.Coordinates[i - 1], out Vector3 start) &&
+                    positions.TryGetValue(route.Coordinates[i], out Vector3 end))
+                {
+                    Handles.DrawAAPolyLine(EnemyPathLineWidth, start, end);
+                }
+            }
+        }
+
+        Handles.color = previousColor;
+        Handles.zTest = previousZTest;
+    }
+
+    private void ApplySelectedEnemyColor()
+    {
+        if (_selectedEnemy == null)
+        {
+            return;
+        }
+
+        Color color = GetEnemyColor(_selectedEnemy.Coordinates);
+
+        foreach (SpriteRenderer spriteRenderer in
+                 _selectedEnemy.GetComponentsInChildren<SpriteRenderer>(true))
+        {
+            spriteRenderer.color = color;
+        }
+    }
+
+    private static Color GetEnemyColor(Vector2Int coordinates)
+    {
+        int hash = coordinates.x * 73856093 ^ coordinates.y * 19349663;
+        float hue = Mathf.Repeat(Mathf.Abs(hash) * 0.000013f, 1f);
+        return Color.HSVToRGB(hue, 0.75f, 1f);
+    }
+
     private void DrawLevelGoalMarker()
     {
         LevelDefinition definition = _tool.LevelDefinition;
@@ -690,6 +1064,23 @@ public class LevelEditorToolEditor : Editor
 
         return TryGetWorldPosition(guiPoint, out Vector3 worldPosition) &&
                TryGetCellAtWorldPosition(worldPosition, out cell);
+    }
+
+    private bool TryGetEnemyAtGuiPoint(
+        Vector2 guiPoint,
+        out LevelEditorPlacedObject enemy)
+    {
+        enemy = null;
+        GameObject pickedObject = HandleUtility.PickGameObject(guiPoint, false);
+
+        if (pickedObject == null)
+        {
+            return false;
+        }
+
+        enemy = pickedObject.GetComponentInParent<LevelEditorPlacedObject>();
+
+        return enemy != null && enemy.Type == LevelEditorObjectType.Enemy;
     }
 
     private bool TryGetWorldPosition(Vector2 guiPoint, out Vector3 worldPosition)
