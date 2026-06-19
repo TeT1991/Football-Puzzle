@@ -8,13 +8,15 @@ using UnityEngine.Rendering;
 public class LevelEditorToolEditor : Editor
 {
     private const float CellHalfSize = 0.5f;
-    private const float PlayerPathLineWidth = 5f;
-    private const float EnemyPathLineWidth = 6.5f;
+    private const float PlayerPathLineWidth = 13f;
+    private const float EnemyPathLineWidth = 13f;
+    private const float PathLaneSpacing = 0.14f;
+    private const int PlayerPathOwnerId = 0;
     private const float GoalMarkerLineWidth = 3f;
     private const float GoalMarkerOuterRadius = 0.32f;
     private const float GoalMarkerInnerRadius = 0.14f;
 
-    private static readonly Color PlayerPathColor = new(0.05f, 0.45f, 1f, 0.5f);
+    private static readonly Color PlayerPathColor = new(0.02f, 0.18f, 0.42f, 1f);
     private static readonly Color GoalMarkerColor = new(1f, 0.75f, 0.05f, 0.9f);
     private static readonly Color GoalMarkerFillColor = new(1f, 0.75f, 0.05f, 0.35f);
 
@@ -24,6 +26,7 @@ public class LevelEditorToolEditor : Editor
     private bool _isDrawingPlayerPath;
     private bool _isSelectingEnemyForPath;
     private bool _isDrawingEnemyPath;
+    private bool _isDeletingEnemy;
     private bool _isSelectingLevelGoal;
     private bool _showPlayerPaths = true;
     private bool _isPathDragging;
@@ -48,6 +51,7 @@ public class LevelEditorToolEditor : Editor
     {
         EndPathDrag();
         StopEnemyPathDrawing();
+        _isDeletingEnemy = false;
         _isSelectingLevelGoal = false;
         SceneView.duringSceneGui -= OnSceneGUI;
     }
@@ -66,6 +70,7 @@ public class LevelEditorToolEditor : Editor
         {
             StopPlayerPathDrawing();
             StopEnemyPathDrawing();
+            StopEnemyDeletion();
             StopLevelGoalSelection();
             _tool.CreateLevel();
             MarkToolDirty();
@@ -75,6 +80,7 @@ public class LevelEditorToolEditor : Editor
         {
             StopPlayerPathDrawing();
             StopEnemyPathDrawing();
+            StopEnemyDeletion();
             StopLevelGoalSelection();
             _tool.ClearLevel();
             MarkToolDirty();
@@ -86,6 +92,7 @@ public class LevelEditorToolEditor : Editor
         {
             StopPlayerPathDrawing();
             StopEnemyPathDrawing();
+            StopEnemyDeletion();
             StopLevelGoalSelection();
             _tool.StartPlacingCharacter();
             SceneView.RepaintAll();
@@ -96,15 +103,22 @@ public class LevelEditorToolEditor : Editor
         {
             StopPlayerPathDrawing();
             StopEnemyPathDrawing();
+            StopEnemyDeletion();
             StopLevelGoalSelection();
             _tool.StartPlacingEnemy();
             SceneView.RepaintAll();
             MarkToolDirty();
         }
 
+        if (GUILayout.Button("Delete Enemy"))
+        {
+            StartEnemyDeletion();
+        }
+
         if (GUILayout.Button("Stop Placement"))
         {
             _tool.StopPlacement();
+            StopEnemyDeletion();
             SceneView.RepaintAll();
             MarkToolDirty();
         }
@@ -130,6 +144,14 @@ public class LevelEditorToolEditor : Editor
 
     private void DrawModeInfo()
     {
+        if (_isDeletingEnemy)
+        {
+            EditorGUILayout.HelpBox(
+                "Mode: Delete Enemy. Click an enemy in Scene View. Esc - cancel.",
+                MessageType.Info);
+            return;
+        }
+
         if (_isSelectingEnemyForPath)
         {
             EditorGUILayout.HelpBox(
@@ -206,6 +228,7 @@ public class LevelEditorToolEditor : Editor
     {
         StopPlayerPathDrawing();
         StopEnemyPathDrawing();
+        StopEnemyDeletion();
         _tool.StopPlacement();
         _tool.ApplySceneToDefinition();
 
@@ -276,6 +299,7 @@ public class LevelEditorToolEditor : Editor
     {
         StopLevelGoalSelection();
         StopEnemyPathDrawing();
+        StopEnemyDeletion();
         _tool.StopPlacement();
         _tool.ApplySceneToDefinition();
 
@@ -356,6 +380,7 @@ public class LevelEditorToolEditor : Editor
         StopPlayerPathDrawing();
         StopLevelGoalSelection();
         StopEnemyPathDrawing();
+        StopEnemyDeletion();
         _tool.StopPlacement();
         _tool.ApplySceneToDefinition();
 
@@ -412,6 +437,38 @@ public class LevelEditorToolEditor : Editor
         Repaint();
     }
 
+    private void StartEnemyDeletion()
+    {
+        StopPlayerPathDrawing();
+        StopLevelGoalSelection();
+        StopEnemyPathDrawing();
+        _tool.StopPlacement();
+        _tool.ApplySceneToDefinition();
+
+        if (_tool.LevelDefinition == null ||
+            _tool.LevelDefinition.EnemyPositions.Count == 0)
+        {
+            Debug.LogWarning("There are no enemies to delete.");
+            return;
+        }
+
+        _isDeletingEnemy = true;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
+    private void StopEnemyDeletion()
+    {
+        if (_isDeletingEnemy == false)
+        {
+            return;
+        }
+
+        _isDeletingEnemy = false;
+        SceneView.RepaintAll();
+        Repaint();
+    }
+
     private void SaveCurrent()
     {
         _tool.ApplySceneToDefinition();
@@ -450,11 +507,20 @@ public class LevelEditorToolEditor : Editor
             return;
         }
 
-        DrawPlayerPaths();
-        DrawEnemyPaths();
+        Dictionary<(Vector2Int, Vector2Int), List<int>> pathSegmentOwners =
+            BuildPathSegmentOwners();
+
+        DrawPlayerPaths(pathSegmentOwners);
+        DrawEnemyPaths(pathSegmentOwners);
         DrawLevelGoalMarker();
 
         Event currentEvent = Event.current;
+
+        if (_isDeletingEnemy)
+        {
+            HandleEnemyDeletionInput(currentEvent);
+            return;
+        }
 
         if (_isSelectingEnemyForPath)
         {
@@ -510,6 +576,44 @@ public class LevelEditorToolEditor : Editor
         {
             MarkToolDirty();
             SceneView.RepaintAll();
+        }
+
+        currentEvent.Use();
+    }
+
+    private void HandleEnemyDeletionInput(Event currentEvent)
+    {
+        if (currentEvent.type == EventType.Layout)
+        {
+            HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+            return;
+        }
+
+        if (currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+        {
+            StopEnemyDeletion();
+            currentEvent.Use();
+            return;
+        }
+
+        if (currentEvent.alt ||
+            currentEvent.type != EventType.MouseDown ||
+            currentEvent.button != 0)
+        {
+            return;
+        }
+
+        if (TryGetEnemyAtGuiPoint(currentEvent.mousePosition, out LevelEditorPlacedObject enemy) &&
+            _tool.DeleteEnemy(enemy.Coordinates))
+        {
+            EditorUtility.SetDirty(_tool.LevelDefinition);
+            MarkToolDirty();
+            SceneView.RepaintAll();
+
+            if (_tool.LevelDefinition.EnemyPositions.Count == 0)
+            {
+                StopEnemyDeletion();
+            }
         }
 
         currentEvent.Use();
@@ -889,7 +993,142 @@ public class LevelEditorToolEditor : Editor
         _lastPathCell = null;
     }
 
-    private void DrawPlayerPaths()
+    private Dictionary<(Vector2Int, Vector2Int), List<int>> BuildPathSegmentOwners()
+    {
+        Dictionary<(Vector2Int, Vector2Int), List<int>> owners = new();
+        LevelDefinition definition = _tool.LevelDefinition;
+
+        if (definition == null)
+        {
+            return owners;
+        }
+
+        Dictionary<Vector2Int, HashSet<Vector2Int>> playerGraph =
+            PlayerPathEditorUtility.ReadGraph(definition);
+
+        foreach (KeyValuePair<Vector2Int, HashSet<Vector2Int>> node in playerGraph)
+        {
+            foreach (Vector2Int connectedCoordinates in node.Value)
+            {
+                if (ShouldDrawConnection(node.Key, connectedCoordinates))
+                {
+                    AddPathSegmentOwner(
+                        owners,
+                        node.Key,
+                        connectedCoordinates,
+                        PlayerPathOwnerId);
+                }
+            }
+        }
+
+        if (definition.EnemyRoutes == null)
+        {
+            return owners;
+        }
+
+        foreach (EnemyRoute route in definition.EnemyRoutes)
+        {
+            if (route == null)
+            {
+                continue;
+            }
+
+            int ownerId = GetEnemyPathOwnerId(
+                definition,
+                route.EnemyStartCoordinates);
+
+            for (int i = 1; i < route.Coordinates.Count; i++)
+            {
+                AddPathSegmentOwner(
+                    owners,
+                    route.Coordinates[i - 1],
+                    route.Coordinates[i],
+                    ownerId);
+            }
+        }
+
+        foreach (List<int> segmentOwners in owners.Values)
+        {
+            segmentOwners.Sort();
+        }
+
+        return owners;
+    }
+
+    private static void AddPathSegmentOwner(
+        Dictionary<(Vector2Int, Vector2Int), List<int>> owners,
+        Vector2Int first,
+        Vector2Int second,
+        int ownerId)
+    {
+        (Vector2Int, Vector2Int) key = GetPathSegmentKey(first, second);
+
+        if (owners.TryGetValue(key, out List<int> segmentOwners) == false)
+        {
+            segmentOwners = new List<int>();
+            owners.Add(key, segmentOwners);
+        }
+
+        if (segmentOwners.Contains(ownerId) == false)
+        {
+            segmentOwners.Add(ownerId);
+        }
+    }
+
+    private static Vector3 GetPathLaneOffset(
+        Vector2Int firstCoordinates,
+        Vector2Int secondCoordinates,
+        Vector3 firstPosition,
+        Vector3 secondPosition,
+        int ownerId,
+        Dictionary<(Vector2Int, Vector2Int), List<int>> owners)
+    {
+        (Vector2Int, Vector2Int) key = GetPathSegmentKey(
+            firstCoordinates,
+            secondCoordinates);
+
+        if (owners.TryGetValue(key, out List<int> segmentOwners) == false ||
+            segmentOwners.Count < 2)
+        {
+            return Vector3.zero;
+        }
+
+        int laneIndex = segmentOwners.IndexOf(ownerId);
+
+        if (laneIndex < 0)
+        {
+            return Vector3.zero;
+        }
+
+        Vector3 direction = ShouldDrawConnection(firstCoordinates, secondCoordinates)
+            ? secondPosition - firstPosition
+            : firstPosition - secondPosition;
+
+        direction.Normalize();
+
+        float centeredLane = laneIndex - (segmentOwners.Count - 1) * 0.5f;
+        Vector3 perpendicular = new(-direction.y, direction.x, 0f);
+        return perpendicular * centeredLane * PathLaneSpacing;
+    }
+
+    private static (Vector2Int, Vector2Int) GetPathSegmentKey(
+        Vector2Int first,
+        Vector2Int second)
+    {
+        return ShouldDrawConnection(first, second)
+            ? (first, second)
+            : (second, first);
+    }
+
+    private static int GetEnemyPathOwnerId(
+        LevelDefinition definition,
+        Vector2Int enemyCoordinates)
+    {
+        return 1 + enemyCoordinates.y * definition.Width + enemyCoordinates.x;
+    }
+
+    private void DrawPlayerPaths(
+        Dictionary<(Vector2Int, Vector2Int), List<int>> pathSegmentOwners)
     {
         if (_showPlayerPaths == false || _tool.LevelDefinition == null)
         {
@@ -931,10 +1170,18 @@ public class LevelEditorToolEditor : Editor
                     continue;
                 }
 
+                Vector3 offset = GetPathLaneOffset(
+                    node.Key,
+                    connectedCoordinates,
+                    startPosition,
+                    endPosition,
+                    PlayerPathOwnerId,
+                    pathSegmentOwners);
+
                 Handles.DrawAAPolyLine(
                     PlayerPathLineWidth,
-                    startPosition,
-                    endPosition);
+                    startPosition + offset,
+                    endPosition + offset);
             }
         }
 
@@ -942,7 +1189,8 @@ public class LevelEditorToolEditor : Editor
         Handles.zTest = previousZTest;
     }
 
-    private void DrawEnemyPaths()
+    private void DrawEnemyPaths(
+        Dictionary<(Vector2Int, Vector2Int), List<int>> pathSegmentOwners)
     {
         LevelDefinition definition = _tool.LevelDefinition;
 
@@ -950,6 +1198,8 @@ public class LevelEditorToolEditor : Editor
         {
             return;
         }
+
+        ApplyEnemyRouteColors(definition);
 
         Dictionary<Vector2Int, Vector3> positions = new();
 
@@ -972,16 +1222,25 @@ public class LevelEditorToolEditor : Editor
                 continue;
             }
 
-            Color pathColor = GetEnemyColor(route.EnemyStartCoordinates);
-            pathColor.a = 1f;
-            Handles.color = pathColor;
+            Handles.color = GetEnemyPathColor(route.EnemyStartCoordinates);
 
             for (int i = 1; i < route.Coordinates.Count; i++)
             {
                 if (positions.TryGetValue(route.Coordinates[i - 1], out Vector3 start) &&
                     positions.TryGetValue(route.Coordinates[i], out Vector3 end))
                 {
-                    Handles.DrawAAPolyLine(EnemyPathLineWidth, start, end);
+                    Vector3 offset = GetPathLaneOffset(
+                        route.Coordinates[i - 1],
+                        route.Coordinates[i],
+                        start,
+                        end,
+                        GetEnemyPathOwnerId(definition, route.EnemyStartCoordinates),
+                        pathSegmentOwners);
+
+                    Handles.DrawAAPolyLine(
+                        EnemyPathLineWidth,
+                        start + offset,
+                        end + offset);
                 }
             }
         }
@@ -1004,6 +1263,34 @@ public class LevelEditorToolEditor : Editor
         {
             spriteRenderer.color = color;
         }
+    }
+
+    private void ApplyEnemyRouteColors(LevelDefinition definition)
+    {
+        foreach (LevelEditorPlacedObject enemy in GetSceneEnemies())
+        {
+            if (enemy == null ||
+                enemy.Type != LevelEditorObjectType.Enemy ||
+                definition.TryGetEnemyRoute(enemy.Coordinates, out _) == false)
+            {
+                continue;
+            }
+
+            Color color = GetEnemyColor(enemy.Coordinates);
+
+            foreach (SpriteRenderer spriteRenderer in
+                     enemy.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                spriteRenderer.color = color;
+            }
+        }
+    }
+
+    private static Color GetEnemyPathColor(Vector2Int coordinates)
+    {
+        Color color = Color.Lerp(GetEnemyColor(coordinates), Color.black, 0.35f);
+        color.a = 1f;
+        return color;
     }
 
     private static Color GetEnemyColor(Vector2Int coordinates)
@@ -1154,6 +1441,18 @@ public class LevelEditorToolEditor : Editor
         return cellsParent != null
             ? cellsParent.GetComponentsInChildren<CellView>(true)
             : new CellView[0];
+    }
+
+    private LevelEditorPlacedObject[] GetSceneEnemies()
+    {
+        SerializedObject serializedTool = new(_tool);
+        SerializedProperty enemiesParentProperty =
+            serializedTool.FindProperty("_enemiesParent");
+        Transform enemiesParent = enemiesParentProperty?.objectReferenceValue as Transform;
+
+        return enemiesParent != null
+            ? enemiesParent.GetComponentsInChildren<LevelEditorPlacedObject>(true)
+            : new LevelEditorPlacedObject[0];
     }
 
     private static bool ShouldDrawConnection(Vector2Int first, Vector2Int second)

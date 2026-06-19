@@ -105,6 +105,32 @@ public class LevelEditorTool : MonoBehaviour
         SetMode(LevelEditorMode.None);
     }
 
+    public bool DeleteEnemy(Vector2Int coordinates)
+    {
+        if (_enemiesParent == null)
+        {
+            return false;
+        }
+
+        LevelEditorPlacedObject[] placedObjects =
+            _enemiesParent.GetComponentsInChildren<LevelEditorPlacedObject>(true);
+
+        foreach (LevelEditorPlacedObject placedObject in placedObjects)
+        {
+            if (placedObject.Type != LevelEditorObjectType.Enemy ||
+                placedObject.Coordinates != coordinates)
+            {
+                continue;
+            }
+
+            DestroyObject(placedObject.gameObject);
+            ApplySceneToDefinition();
+            return true;
+        }
+
+        return false;
+    }
+
     public void StartPlacingCharacters()
     {
         StartPlacingCharacter();
