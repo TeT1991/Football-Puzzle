@@ -17,7 +17,7 @@ public class LevelDefinition : ScriptableObject
     [SerializeField] private List<Vector2Int> _enemyPositions = new();
     [SerializeField] private List<EnemyRoute> _enemyRoutes = new();
     [FormerlySerializedAs("_testRoute")]
-    [SerializeField] private Route _route = new();
+    [SerializeField] private Route _characterRoot = new();
 
     public int Width => _width;
     public int Height => _height;
@@ -28,7 +28,7 @@ public class LevelDefinition : ScriptableObject
     public Vector2Int GoalCoordinates => _goalCoordinates;
     public IReadOnlyList<Vector2Int> EnemyPositions => _enemyPositions;
     public IReadOnlyList<EnemyRoute> EnemyRoutes => _enemyRoutes;
-    public Route TestRoute => _route;
+    public Route CharacterRoute => _characterRoot;
 
     public void UpdateData(LevelData levelData)
     {
@@ -118,7 +118,9 @@ public class LevelDefinition : ScriptableObject
 
         foreach (EnemyRoute route in _enemyRoutes)
         {
-            if (route != null && route.EnemyStartCoordinates == enemyCoordinates)
+            if (route != null &&
+                route.HasCoordinates &&
+                route.EnemyStartCoordinates == enemyCoordinates)
             {
                 enemyRoute = route;
                 return true;
@@ -141,7 +143,6 @@ public class LevelDefinition : ScriptableObject
 
         RemoveEnemyRoute(enemyCoordinates);
         _enemyRoutes.Add(new EnemyRoute(
-            enemyCoordinates,
             BuildValidEnemyRoute(enemyCoordinates, routeCoordinates)));
     }
 
@@ -153,7 +154,9 @@ public class LevelDefinition : ScriptableObject
         }
 
         _enemyRoutes.RemoveAll(route =>
-            route == null || route.EnemyStartCoordinates == enemyCoordinates);
+            route == null ||
+            route.HasCoordinates == false ||
+            route.EnemyStartCoordinates == enemyCoordinates);
     }
 
     public void SetGoal(Vector2Int coordinates)
@@ -206,7 +209,7 @@ public class LevelDefinition : ScriptableObject
 
         foreach (EnemyRoute route in source.EnemyRoutes)
         {
-            if (route != null)
+            if (route != null && route.HasCoordinates)
             {
                 SetEnemyRoute(route.EnemyStartCoordinates, route.Coordinates);
             }
@@ -223,6 +226,7 @@ public class LevelDefinition : ScriptableObject
             EnemyRoute route = _enemyRoutes[i];
 
             if (route == null ||
+                route.HasCoordinates == false ||
                 _enemyPositions.Contains(route.EnemyStartCoordinates) == false ||
                 usedEnemies.Add(route.EnemyStartCoordinates) == false)
             {
@@ -231,7 +235,6 @@ public class LevelDefinition : ScriptableObject
             }
 
             _enemyRoutes[i] = new EnemyRoute(
-                route.EnemyStartCoordinates,
                 BuildValidEnemyRoute(route.EnemyStartCoordinates, route.Coordinates));
         }
     }
@@ -297,9 +300,9 @@ public class LevelDefinition : ScriptableObject
 
         RemoveRoutesWithoutEnemies();
 
-        if (_route == null)
+        if (_characterRoot == null)
         {
-            _route = new Route();
+            _characterRoot = new Route();
         }
     }
 }

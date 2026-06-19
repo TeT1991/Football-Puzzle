@@ -9,6 +9,7 @@ public class LevelBootstrap : MonoBehaviour
     [SerializeField] private Transform _cellsParent;
     [SerializeField] private CellSelector _cellSelector;
     [SerializeField] private Transform _characterParent;
+    [SerializeField] private Transform _enemiesParent;
     [SerializeField] private EntityView _entityViewPrefab;
     [SerializeField] private LevelProcessor _levelProcessor;
 
@@ -34,20 +35,39 @@ public class LevelBootstrap : MonoBehaviour
         _cells = _gridBuilder.CreateTiles(levelData.Width, levelData.Height);
 
         _entityCreator = new(_characterParent, _entityViewPrefab);
-        CreateCharacter(out EntityView character);
-        _entityRouteRegistry = new();
-        _entityRouteRegistry.AddRoute(character, _levelDefenition.TestRoute);
-        _entetiesMovementProcessor = new(character);
+        EntityView character = CreateEntityView();
+
+        InitEntities(character);
 
         _cellSelector.Init((CellView[,])_cells.Clone());
 
-        _levelProcessor.Init(character ,_cellSelector, _entityRouteRegistry, _entetiesMovementProcessor);
+        _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor);
 
 
         _disposables = new();
         _disposables.Add(_entetiesMovementProcessor);
 
         _levelProcessor.StartLevel(); //после всех инициализиаций
+    }
+
+    private void InitEntities(EntityView character)
+    {
+        //Установить скин персонажа наверное
+
+        List<Route> routes = new List<Route>();
+
+        _entityRouteRegistry = new();
+        _entityRouteRegistry.AddRoute(character, _levelDefenition.CharacterRoute);
+        _entetiesMovementProcessor = new(character);
+
+        routes = (List<Route>)_levelDefenition.EnemyRoutes;
+
+        foreach (Route route in routes)
+        {
+            EntityView view = CreateEntityView();
+            _entityRouteRegistry.AddRoute(view, route);
+            _entetiesMovementProcessor.AddEnemiesRoutes(view, route);
+        }
     }
 
     private LevelData GenerateLevelData()
@@ -59,16 +79,16 @@ public class LevelBootstrap : MonoBehaviour
         return new(width, height, characterStartPosition);
     }
 
-    private void CreateCharacter(out EntityView character)
+    private EntityView CreateEntityView()
     {
         float gridOffsetX = GameUtility.CalculateGridOffset(_levelDefenition.Width);
         float gridOffsetY = GameUtility.CalculateGridOffset(_levelDefenition.Height);
 
         float xPosition = _levelDefenition.CharacterPosition.x - gridOffsetX;
         float yPosition = _levelDefenition.CharacterPosition.y - gridOffsetY;
-        Vector2 offsetedPosition = new (xPosition, yPosition);
+        Vector2 offsetedPosition = new(xPosition, yPosition);
 
-        character = _entityCreator.CreateEntity(offsetedPosition, _levelDefenition.CharacterPosition);
+        return _entityCreator.CreateEntity(offsetedPosition, _levelDefenition.CharacterPosition);
 
     }
 

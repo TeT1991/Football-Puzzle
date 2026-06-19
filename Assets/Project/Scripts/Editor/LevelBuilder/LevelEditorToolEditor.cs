@@ -1178,10 +1178,10 @@ public class LevelEditorToolEditor : Editor
                     PlayerPathOwnerId,
                     pathSegmentOwners);
 
-                Handles.DrawAAPolyLine(
-                    PlayerPathLineWidth,
+                Handles.DrawLine(
                     startPosition + offset,
-                    endPosition + offset);
+                    endPosition + offset,
+                    PlayerPathLineWidth);
             }
         }
 
@@ -1237,10 +1237,10 @@ public class LevelEditorToolEditor : Editor
                         GetEnemyPathOwnerId(definition, route.EnemyStartCoordinates),
                         pathSegmentOwners);
 
-                    Handles.DrawAAPolyLine(
-                        EnemyPathLineWidth,
+                    Handles.DrawLine(
                         start + offset,
-                        end + offset);
+                        end + offset,
+                        EnemyPathLineWidth);
                 }
             }
         }

@@ -69,7 +69,7 @@ public class LevelProcessor : MonoBehaviour
         if (CanMove(cellView))
         {
             _cellSelector.StopSelecting();
-            _entetiesMovementProcessor.StartCharacterMovement(cellView.transform.position);
+            _entetiesMovementProcessor.StartEntetiesMovement(cellView.transform.position);
            
 
         }
@@ -115,6 +115,7 @@ public class LevelProcessor : MonoBehaviour
 public class EntetiesMovementProcessor : IDisposable
 {
     private readonly EntityView _character;
+    private readonly Dictionary<EntityView, Route> _enemies;
 
     public event Action CharacterMovementStopped;
 
@@ -122,11 +123,25 @@ public class EntetiesMovementProcessor : IDisposable
     {
         _character = character;
         _character.TargetPositionReached += OnCharacterMovementStopped;
+
+        _enemies = new();
     }
 
-    public void StartCharacterMovement(Vector3 targetPosition)
+    public void AddEnemiesRoutes(EntityView entityView, Route route)
+    {
+        _enemies.Add(entityView, route);
+    }
+
+    public void StartEntetiesMovement(Vector3 targetPosition)
     {
         _character.StartMove(targetPosition);
+
+       
+    }
+
+    private Vector3Int GetNextCoordinates(EntityView entityView)
+    {
+        Vector3Int next = _enemies[entityView].Get;
     }
 
     private void OnCharacterMovementStopped()
