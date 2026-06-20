@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,7 +17,7 @@ public class LevelBootstrap : MonoBehaviour
     private EntityCreator _entityCreator;
     private EntityRouteRegistry _entityRouteRegistry;
     private EntetiesMovementProcessor _entetiesMovementProcessor;
-    private SkinLoader _skinLoader; //Нужен ли?
+    private SkinLoader _skinLoader; //РќСѓР¶РµРЅ Р»Рё?
 
     private CellView[,] _cells;
 
@@ -35,7 +35,9 @@ public class LevelBootstrap : MonoBehaviour
         _cells = _gridBuilder.CreateTiles(levelData.Width, levelData.Height);
 
         _entityCreator = new(_characterParent, _entityViewPrefab);
-        EntityView character = CreateEntityView();
+        EntityView character = CreateEntityView(
+            _entityCreator,
+            _levelDefenition.CharacterPosition);
 
         InitEntities(character);
 
@@ -47,24 +49,27 @@ public class LevelBootstrap : MonoBehaviour
         _disposables = new();
         _disposables.Add(_entetiesMovementProcessor);
 
-        _levelProcessor.StartLevel(); //после всех инициализиаций
+        _levelProcessor.StartLevel(); //РїРѕСЃР»Рµ РІСЃРµС… РёРЅРёС†РёР°Р»РёР·РёР°С†РёР№
     }
 
     private void InitEntities(EntityView character)
     {
-        //Установить скин персонажа наверное
-
-        List<Route> routes = new List<Route>();
+        //РЈСЃС‚Р°РЅРѕРІРёС‚СЊ СЃРєРёРЅ РїРµСЂСЃРѕРЅР°Р¶Р° РЅР°РІРµСЂРЅРѕРµ
 
         _entityRouteRegistry = new();
         _entityRouteRegistry.AddRoute(character, _levelDefenition.CharacterRoute);
-        _entetiesMovementProcessor = new(character);
+        _entetiesMovementProcessor = new(character, _levelDefenition.Width, _levelDefenition.Height);
 
-        routes = (List<Route>)_levelDefenition.EnemyRoutes;
+        EntityCreator enemyCreator = new(_enemiesParent, _entityViewPrefab);
 
-        foreach (Route route in routes)
+        foreach (Route route in _levelDefenition.EnemyRoutes)
         {
-            EntityView view = CreateEntityView();
+            if (route == null || route.HasNodes == false)
+            {
+                continue;
+            }
+
+            EntityView view = CreateEntityView(enemyCreator, route.StartCoordinates);
             _entityRouteRegistry.AddRoute(view, route);
             _entetiesMovementProcessor.AddEnemiesRoutes(view, route);
         }
@@ -79,16 +84,14 @@ public class LevelBootstrap : MonoBehaviour
         return new(width, height, characterStartPosition);
     }
 
-    private EntityView CreateEntityView()
+    private EntityView CreateEntityView(EntityCreator entityCreator, Vector2Int coordinates)
     {
-        float gridOffsetX = GameUtility.CalculateGridOffset(_levelDefenition.Width);
-        float gridOffsetY = GameUtility.CalculateGridOffset(_levelDefenition.Height);
+        int width = _levelDefenition.Width;
+        int height = _levelDefenition.Height;
 
-        float xPosition = _levelDefenition.CharacterPosition.x - gridOffsetX;
-        float yPosition = _levelDefenition.CharacterPosition.y - gridOffsetY;
-        Vector2 offsetedPosition = new(xPosition, yPosition);
+        Vector2 offsetedPosition = GameUtility.ConvertCoordinatesToPosition(coordinates, width, height);
 
-        return _entityCreator.CreateEntity(offsetedPosition, _levelDefenition.CharacterPosition);
+        return entityCreator.CreateEntity(offsetedPosition, coordinates);
 
     }
 

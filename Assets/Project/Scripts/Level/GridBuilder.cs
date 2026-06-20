@@ -19,10 +19,9 @@ public class GridBuilder
         {
             for (int x = 0; x < width; x++)
             {
-                float xPosition = x - GameUtility.CalculateGridOffset(width);
-                float yPosition = y - GameUtility.CalculateGridOffset(height);
-                Vector2 position = new(xPosition, yPosition);
                 Vector2Int coordinates = new(x, y);
+
+                Vector2 position = GameUtility.ConvertCoordinatesToPosition(coordinates, width, height);
 
                 CellView cell = MonoBehaviour.Instantiate(_cellViewPrefab, _cellsParent);
                 cell.transform.localPosition = position;

@@ -8,12 +8,22 @@ internal static class EnemyPathEditorUtility
         LevelDefinition definition,
         Vector2Int enemyStartCoordinates)
     {
-        EnemyRoute route;
+        Route route;
 
         if (definition != null &&
             definition.TryGetEnemyRoute(enemyStartCoordinates, out route))
         {
-            return new List<Vector2Int>(route.Coordinates);
+            List<Vector2Int> path = new();
+
+            foreach (RouteNode node in route.RouteNodes)
+            {
+                if (node != null)
+                {
+                    path.Add(node.CurrentCoordinates);
+                }
+            }
+
+            return path;
         }
 
         return new List<Vector2Int> { enemyStartCoordinates };
@@ -130,7 +140,39 @@ internal static class EnemyPathEditorUtility
         string undoName)
     {
         Undo.RecordObject(definition, undoName);
-        definition.SetEnemyRoute(enemyStartCoordinates, path);
+        definition.SetEnemyRoute(enemyStartCoordinates, CreateRoute(path));
         EditorUtility.SetDirty(definition);
+    }
+
+    private static Route CreateRoute(IReadOnlyList<Vector2Int> path)
+    {
+        Route route = new();
+
+        if (path == null)
+        {
+            return route;
+        }
+
+        for (int i = 0; i < path.Count; i++)
+        {
+            List<Vector2Int> connections = new();
+
+            if (i > 0)
+            {
+                connections.Add(path[i - 1]);
+            }
+
+            if (i + 1 < path.Count &&
+                connections.Contains(path[i + 1]) == false)
+            {
+                connections.Add(path[i + 1]);
+            }
+
+            route.AddRouteNode(new RouteNode(
+                path[i],
+                connections.ToArray()));
+        }
+
+        return route;
     }
 }

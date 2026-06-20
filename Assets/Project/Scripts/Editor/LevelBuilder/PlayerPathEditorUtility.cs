@@ -4,7 +4,7 @@ using UnityEngine;
 
 internal static class PlayerPathEditorUtility
 {
-    private const string RouteProperty = "_route";
+    private const string RouteProperty = "_characterRoot";
     private const string RouteNodesProperty = "_routeNodes";
     private const string CurrentCoordinatesProperty = "_currentCoordinates";
     private const string ChainedCoordinatesProperty = "_chainedCoordinates";

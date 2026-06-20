@@ -11,7 +11,38 @@ public class Route
         _routeNodes ??= new();
     }
 
-    public IReadOnlyList<RouteNode> RouteNodes => _routeNodes;
+    public Route(IEnumerable<RouteNode> routeNodes)
+    {
+        _routeNodes = new List<RouteNode>();
+
+        if (routeNodes == null)
+        {
+            return;
+        }
+
+        foreach (RouteNode node in routeNodes)
+        {
+            if (node == null)
+            {
+                continue;
+            }
+
+            Vector2Int[] connections = new Vector2Int[node.ChainedCoordinates.Count];
+
+            for (int i = 0; i < connections.Length; i++)
+            {
+                connections[i] = node.ChainedCoordinates[i];
+            }
+
+            _routeNodes.Add(new RouteNode(node.CurrentCoordinates, connections));
+        }
+    }
+
+    public IReadOnlyList<RouteNode> RouteNodes => _routeNodes ??= new List<RouteNode>();
+    public bool HasNodes => _routeNodes != null && _routeNodes.Count > 0;
+    public Vector2Int StartCoordinates => HasNodes
+        ? _routeNodes[0].CurrentCoordinates
+        : default;
 
     public void AddRouteNode(RouteNode node)
     {

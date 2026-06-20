@@ -15,8 +15,9 @@ public class LevelDefinition : ScriptableObject
     [SerializeField] private Vector2Int _goalCoordinates;
 
     [SerializeField] private List<Vector2Int> _enemyPositions = new();
-    [SerializeField] private List<EnemyRoute> _enemyRoutes = new();
+    [SerializeField] private List<Route> _enemyRoutes = new();
     [FormerlySerializedAs("_testRoute")]
+    [FormerlySerializedAs("_route")]
     [SerializeField] private Route _characterRoot = new();
 
     public int Width => _width;
@@ -27,7 +28,7 @@ public class LevelDefinition : ScriptableObject
     public bool HasGoal => _hasGoal;
     public Vector2Int GoalCoordinates => _goalCoordinates;
     public IReadOnlyList<Vector2Int> EnemyPositions => _enemyPositions;
-    public IReadOnlyList<EnemyRoute> EnemyRoutes => _enemyRoutes;
+    public IReadOnlyList<Route> EnemyRoutes => _enemyRoutes;
     public Route CharacterRoute => _characterRoot;
 
     public void UpdateData(LevelData levelData)
@@ -107,7 +108,7 @@ public class LevelDefinition : ScriptableObject
         CopyEnemyRoutesFrom(source);
     }
 
-    public bool TryGetEnemyRoute(Vector2Int enemyCoordinates, out EnemyRoute enemyRoute)
+    public bool TryGetEnemyRoute(Vector2Int enemyCoordinates, out Route enemyRoute)
     {
         enemyRoute = null;
 
@@ -116,11 +117,11 @@ public class LevelDefinition : ScriptableObject
             return false;
         }
 
-        foreach (EnemyRoute route in _enemyRoutes)
+        foreach (Route route in _enemyRoutes)
         {
             if (route != null &&
-                route.HasCoordinates &&
-                route.EnemyStartCoordinates == enemyCoordinates)
+                route.HasNodes &&
+                route.StartCoordinates == enemyCoordinates)
             {
                 enemyRoute = route;
                 return true;
@@ -132,18 +133,20 @@ public class LevelDefinition : ScriptableObject
 
     public void SetEnemyRoute(
         Vector2Int enemyCoordinates,
-        IReadOnlyList<Vector2Int> routeCoordinates)
+        Route route)
     {
-        _enemyRoutes ??= new List<EnemyRoute>();
+        _enemyRoutes ??= new List<Route>();
 
-        if (_enemyPositions.Contains(enemyCoordinates) == false)
+        if (_enemyPositions.Contains(enemyCoordinates) == false ||
+            route == null ||
+            route.HasNodes == false ||
+            route.StartCoordinates != enemyCoordinates)
         {
             return;
         }
 
         RemoveEnemyRoute(enemyCoordinates);
-        _enemyRoutes.Add(new EnemyRoute(
-            BuildValidEnemyRoute(enemyCoordinates, routeCoordinates)));
+        _enemyRoutes.Add(new Route(route.RouteNodes));
     }
 
     public void RemoveEnemyRoute(Vector2Int enemyCoordinates)
@@ -155,8 +158,8 @@ public class LevelDefinition : ScriptableObject
 
         _enemyRoutes.RemoveAll(route =>
             route == null ||
-            route.HasCoordinates == false ||
-            route.EnemyStartCoordinates == enemyCoordinates);
+            route.HasNodes == false ||
+            route.StartCoordinates == enemyCoordinates);
     }
 
     public void SetGoal(Vector2Int coordinates)
@@ -199,7 +202,7 @@ public class LevelDefinition : ScriptableObject
 
     private void CopyEnemyRoutesFrom(LevelDefinition source)
     {
-        _enemyRoutes ??= new List<EnemyRoute>();
+        _enemyRoutes ??= new List<Route>();
         _enemyRoutes.Clear();
 
         if (source.EnemyRoutes == null)
@@ -207,85 +210,32 @@ public class LevelDefinition : ScriptableObject
             return;
         }
 
-        foreach (EnemyRoute route in source.EnemyRoutes)
+        foreach (Route route in source.EnemyRoutes)
         {
-            if (route != null && route.HasCoordinates)
+            if (route != null && route.HasNodes)
             {
-                SetEnemyRoute(route.EnemyStartCoordinates, route.Coordinates);
+                SetEnemyRoute(route.StartCoordinates, route);
             }
         }
     }
 
     private void RemoveRoutesWithoutEnemies()
     {
-        _enemyRoutes ??= new List<EnemyRoute>();
+        _enemyRoutes ??= new List<Route>();
         HashSet<Vector2Int> usedEnemies = new();
 
         for (int i = _enemyRoutes.Count - 1; i >= 0; i--)
         {
-            EnemyRoute route = _enemyRoutes[i];
+            Route route = _enemyRoutes[i];
 
             if (route == null ||
-                route.HasCoordinates == false ||
-                _enemyPositions.Contains(route.EnemyStartCoordinates) == false ||
-                usedEnemies.Add(route.EnemyStartCoordinates) == false)
+                route.HasNodes == false ||
+                _enemyPositions.Contains(route.StartCoordinates) == false ||
+                usedEnemies.Add(route.StartCoordinates) == false)
             {
                 _enemyRoutes.RemoveAt(i);
-                continue;
             }
-
-            _enemyRoutes[i] = new EnemyRoute(
-                BuildValidEnemyRoute(route.EnemyStartCoordinates, route.Coordinates));
         }
-    }
-
-    private List<Vector2Int> BuildValidEnemyRoute(
-        Vector2Int enemyCoordinates,
-        IReadOnlyList<Vector2Int> routeCoordinates)
-    {
-        List<Vector2Int> result = new() { enemyCoordinates };
-        HashSet<Vector2Int> visited = new() { enemyCoordinates };
-
-        if (routeCoordinates == null)
-        {
-            return result;
-        }
-
-        int startIndex = routeCoordinates.Count > 0 &&
-                         routeCoordinates[0] == enemyCoordinates
-            ? 1
-            : 0;
-
-        for (int i = startIndex; i < routeCoordinates.Count; i++)
-        {
-            Vector2Int coordinates = routeCoordinates[i];
-            Vector2Int difference = coordinates - result[result.Count - 1];
-
-            if (IsInsideGrid(coordinates) == false ||
-                Mathf.Abs(difference.x) + Mathf.Abs(difference.y) != 1)
-            {
-                break;
-            }
-
-            if (coordinates == enemyCoordinates)
-            {
-                if (result.Count >= 3)
-                {
-                    result.Add(coordinates);
-                }
-
-                break;
-            }
-
-            if (visited.Add(coordinates) == false)
-            {
-                break;
-            }
-
-            result.Add(coordinates);
-        }
-
-        return result;
     }
 
     private void OnValidate()

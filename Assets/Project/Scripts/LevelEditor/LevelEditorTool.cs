@@ -26,9 +26,6 @@ public class LevelEditorTool : MonoBehaviour
     private GridBuilder _gridBuilder;
     private CellView[,] _cells;
 
-    private float _gridPositionOffsetX;
-    private float _gridPositionOffsetY;
-
     private LevelEditorMode _currentMode = LevelEditorMode.None;
 
     public LevelDefinition LevelDefinition => _levelDefinition;
@@ -243,9 +240,6 @@ public class LevelEditorTool : MonoBehaviour
             _cells[coordinates.x, coordinates.y] = cell;
         }
 
-        _gridPositionOffsetX = GameUtility.CalculateGridOffset(_levelData.Width);
-        _gridPositionOffsetY = GameUtility.CalculateGridOffset(_levelData.Height);
-
         return true;
     }
 
@@ -255,8 +249,6 @@ public class LevelEditorTool : MonoBehaviour
 
         _cells = _gridBuilder.CreateTiles(_levelData.Width, _levelData.Height);
 
-        _gridPositionOffsetX = GameUtility.CalculateGridOffset(_gridWidth);
-        _gridPositionOffsetY = GameUtility.CalculateGridOffset( _gridHeight);
     }
 
     private void SpawnObjectsFromDefinition()
@@ -413,10 +405,12 @@ public class LevelEditorTool : MonoBehaviour
 
         Vector3 localPosition = _cellsParent.InverseTransformPoint(worldPosition);
 
-        int x = Mathf.RoundToInt(localPosition.x + _gridPositionOffsetX);
-        int y = Mathf.RoundToInt(localPosition.y + _gridPositionOffsetY);
-
-        Vector2Int coordinates = new Vector2Int(x, y);
+        int gridWidth = _cells.GetLength(0);
+        int gridHeight = _cells.GetLength(1);
+        Vector2Int coordinates = GameUtility.ConvertPositionToCoordinates(
+            localPosition,
+            gridWidth,
+            gridHeight);
 
         if (TryGetCellByCoordinates(coordinates, out CellView candidate) == false)
         {

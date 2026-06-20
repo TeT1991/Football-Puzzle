@@ -1026,23 +1026,23 @@ public class LevelEditorToolEditor : Editor
             return owners;
         }
 
-        foreach (EnemyRoute route in definition.EnemyRoutes)
+        foreach (Route route in definition.EnemyRoutes)
         {
-            if (route == null)
+            if (route == null || route.HasNodes == false)
             {
                 continue;
             }
 
             int ownerId = GetEnemyPathOwnerId(
                 definition,
-                route.EnemyStartCoordinates);
+                route.StartCoordinates);
 
-            for (int i = 1; i < route.Coordinates.Count; i++)
+            for (int i = 1; i < route.RouteNodes.Count; i++)
             {
                 AddPathSegmentOwner(
                     owners,
-                    route.Coordinates[i - 1],
-                    route.Coordinates[i],
+                    route.RouteNodes[i - 1].CurrentCoordinates,
+                    route.RouteNodes[i].CurrentCoordinates,
                     ownerId);
             }
         }
@@ -1215,26 +1215,31 @@ public class LevelEditorToolEditor : Editor
         CompareFunction previousZTest = Handles.zTest;
         Handles.zTest = CompareFunction.Always;
 
-        foreach (EnemyRoute route in definition.EnemyRoutes)
+        foreach (Route route in definition.EnemyRoutes)
         {
-            if (route == null || route.Coordinates.Count < 2)
+            if (route == null || route.RouteNodes.Count < 2)
             {
                 continue;
             }
 
-            Handles.color = GetEnemyPathColor(route.EnemyStartCoordinates);
+            Handles.color = GetEnemyPathColor(route.StartCoordinates);
 
-            for (int i = 1; i < route.Coordinates.Count; i++)
+            for (int i = 1; i < route.RouteNodes.Count; i++)
             {
-                if (positions.TryGetValue(route.Coordinates[i - 1], out Vector3 start) &&
-                    positions.TryGetValue(route.Coordinates[i], out Vector3 end))
+                Vector2Int previousCoordinates =
+                    route.RouteNodes[i - 1].CurrentCoordinates;
+                Vector2Int currentCoordinates =
+                    route.RouteNodes[i].CurrentCoordinates;
+
+                if (positions.TryGetValue(previousCoordinates, out Vector3 start) &&
+                    positions.TryGetValue(currentCoordinates, out Vector3 end))
                 {
                     Vector3 offset = GetPathLaneOffset(
-                        route.Coordinates[i - 1],
-                        route.Coordinates[i],
+                        previousCoordinates,
+                        currentCoordinates,
                         start,
                         end,
-                        GetEnemyPathOwnerId(definition, route.EnemyStartCoordinates),
+                        GetEnemyPathOwnerId(definition, route.StartCoordinates),
                         pathSegmentOwners);
 
                     Handles.DrawLine(

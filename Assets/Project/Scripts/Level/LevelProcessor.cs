@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,7 +32,7 @@ public class LevelProcessor : MonoBehaviour
         _entetiesMovementProcessor.CharacterMovementStopped += OnCharacterMovementStopped;
     }
 
-    public void StartLevel() //Дает возможность играть когда все инициализировалось. Нужо ли?
+    public void StartLevel() //Р”Р°РµС‚ РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РёРіСЂР°С‚СЊ РєРѕРіРґР° РІСЃРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°Р»РѕСЃСЊ. РќСѓР¶Рѕ Р»Рё?
     {
         SetLevelState(LevelState.PlayerTurn);
         ApplyStateActions();
@@ -71,7 +71,6 @@ public class LevelProcessor : MonoBehaviour
             _cellSelector.StopSelecting();
             _entetiesMovementProcessor.StartEntetiesMovement(cellView.transform.position);
            
-
         }
     }
 
@@ -117,12 +116,18 @@ public class EntetiesMovementProcessor : IDisposable
     private readonly EntityView _character;
     private readonly Dictionary<EntityView, Route> _enemies;
 
+    private int _width;
+    private int _height;
+
     public event Action CharacterMovementStopped;
 
-    public EntetiesMovementProcessor(EntityView character)
+    public EntetiesMovementProcessor(EntityView character, int width, int height)
     {
         _character = character;
         _character.TargetPositionReached += OnCharacterMovementStopped;
+
+        _width = width;
+        _height = height;
 
         _enemies = new();
     }
@@ -136,12 +141,35 @@ public class EntetiesMovementProcessor : IDisposable
     {
         _character.StartMove(targetPosition);
 
-       
+        foreach (KeyValuePair<EntityView, Route> pair in _enemies)
+        {
+            EntityView enemy = pair.Key;
+
+            Vector2Int nextCoordinates = GetNextCoordinates(enemy);
+            Vector2 nextPosition = GameUtility.ConvertCoordinatesToPosition(nextCoordinates, _width, _height);
+
+            enemy.StartMove(nextPosition);
+        }
     }
 
-    private Vector3Int GetNextCoordinates(EntityView entityView)
+    private Vector2Int GetNextCoordinates(EntityView entityView)
     {
-        Vector3Int next = _enemies[entityView].Get;
+        Vector2Int currentCoordinates = entityView.CurrentCoordinates;
+        Route route = _enemies[entityView];
+        IReadOnlyList<RouteNode> nodes = route.RouteNodes;
+
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            if(nodes[i].CurrentCoordinates != currentCoordinates)
+            {
+                continue;
+            }
+
+            int nextIndex = (i + 1) % nodes.Count;
+            return nodes[nextIndex].CurrentCoordinates;
+        }
+
+        throw new InvalidOperationException($"Enemies coordinates {entityView.CurrentCoordinates} not exist in route.");
     }
 
     private void OnCharacterMovementStopped()

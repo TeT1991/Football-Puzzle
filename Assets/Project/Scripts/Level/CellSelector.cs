@@ -4,8 +4,6 @@ using UnityEngine;
 public class CellSelector : MonoBehaviour
 {
     private CellView[,] _cells;
-    private float _gridPositionOffsestX;
-    private float _gridPositionOffsestY;
     private Camera _camera;
 
     private Vector3 _mouseWorldPosition;
@@ -24,8 +22,6 @@ public class CellSelector : MonoBehaviour
     public void Init(CellView[,] cells)
     {
         _cells = cells;
-        _gridPositionOffsestX = GameUtility.CalculateGridOffset(_cells.GetLength(0));
-        _gridPositionOffsestY = GameUtility.CalculateGridOffset(_cells.GetLength(1));
     }
 
     public void Update()
@@ -52,7 +48,10 @@ public class CellSelector : MonoBehaviour
 
     public bool TryGetCell(Vector2 position, out CellView cell)
     {
-        Vector2Int coordinates = GameUtility.ConvertPositionToCoordinates(position, _gridPositionOffsestX, _gridPositionOffsestY);
+        int gridWidth = _cells.GetLength(0);
+        int gridHeight = _cells.GetLength(1);
+
+        Vector2Int coordinates = GameUtility.ConvertPositionToCoordinates(position, gridWidth, gridHeight);
 
         int x = coordinates.x;
         int y = coordinates.y;
