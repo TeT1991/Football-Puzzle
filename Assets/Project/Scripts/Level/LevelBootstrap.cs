@@ -59,8 +59,10 @@ public class LevelBootstrap : MonoBehaviour
         _entityRouteRegistry = new();
         _entityRouteRegistry.AddRoute(character, _levelDefenition.CharacterRoute);
         _entetiesMovementProcessor = new(character, _levelDefenition.Width, _levelDefenition.Height);
+        _entetiesMovementProcessor.AddEntityRoutes(character, _levelDefenition.CharacterRoute);
 
-        EntityCreator enemyCreator = new(_enemiesParent, _entityViewPrefab);
+        EntityCreator entityCreator = new(_enemiesParent, _entityViewPrefab);
+
 
         foreach (Route route in _levelDefenition.EnemyRoutes)
         {
@@ -69,9 +71,9 @@ public class LevelBootstrap : MonoBehaviour
                 continue;
             }
 
-            EntityView view = CreateEntityView(enemyCreator, route.StartCoordinates);
+            EntityView view = CreateEntityView(entityCreator, route.StartCoordinates);
             _entityRouteRegistry.AddRoute(view, route);
-            _entetiesMovementProcessor.AddEnemiesRoutes(view, route);
+            _entetiesMovementProcessor.AddEntityRoutes(view, route);
         }
     }
 

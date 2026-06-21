@@ -18,7 +18,7 @@ public class LevelProcessor : MonoBehaviour
     private void OnDestroy()
     {
         _cellSelector.CellSelected -= TryMoveCharacter;
-        _entetiesMovementProcessor.CharacterMovementStopped -= OnCharacterMovementStopped;
+        _entetiesMovementProcessor.EntitiesMovementStopped -= OnEntitiesMovementStopped;
     }
 
     public void Init(EntityView character, CellSelector cellSelector, EntityRouteRegistry entityRouteRegistry, EntetiesMovementProcessor entetiesMovementProcessor)
@@ -29,12 +29,12 @@ public class LevelProcessor : MonoBehaviour
         _entetiesMovementProcessor = entetiesMovementProcessor;
 
         _cellSelector.CellSelected += TryMoveCharacter;
-        _entetiesMovementProcessor.CharacterMovementStopped += OnCharacterMovementStopped;
+        _entetiesMovementProcessor.EntitiesMovementStopped += OnEntitiesMovementStopped;
     }
 
     public void StartLevel() //Дает возможность играть когда все инициализировалось. Нужо ли?
     {
-        SetLevelState(LevelState.PlayerTurn);
+        SetLevelState(LevelState.EntitiesMoving);
         ApplyStateActions();
     }
 
@@ -42,12 +42,12 @@ public class LevelProcessor : MonoBehaviour
     {
         switch (_levelState)
         {
-            case LevelState.PlayerTurn:
+            case LevelState.EntitiesMoving:
                 ApplyPlayerTurnState();
                 break;
 
-            case LevelState.EnemyTurn:
-                ApplyEnemyTurnState();
+            case LevelState.EndLevelCheck:
+                TryEndLevel();
                 break;
         }
 
@@ -59,9 +59,11 @@ public class LevelProcessor : MonoBehaviour
         _cellSelector.StartSelecting();
     }
 
-    private void ApplyEnemyTurnState()
+    private void TryEndLevel()
     {
-        Debug.Log("ENemy move");
+        Debug.Log("Try End level");
+
+        SetLevelState(LevelState.EntitiesMoving);
     }
 
     private void TryMoveCharacter(CellView cellView)
@@ -69,7 +71,7 @@ public class LevelProcessor : MonoBehaviour
         if (CanMove(cellView))
         {
             _cellSelector.StopSelecting();
-            _entetiesMovementProcessor.StartEntetiesMovement(cellView.transform.position);
+            _entetiesMovementProcessor.StartEntetiesMovement(cellView.Coordinates);
            
         }
     }
@@ -96,66 +98,62 @@ public class LevelProcessor : MonoBehaviour
         ApplyStateActions();
     }
 
-    private void OnCharacterMovementStopped()
+    private void OnEntitiesMovementStopped()
     {
-        Debug.Log(_cellSelector.CurrentCell);
-        _characterView.SetCurrentCoordinates(_cellSelector.CurrentCell.Coordinates);
         _cellSelector.ClearCurrentCell();
-        SetLevelState(LevelState.EnemyTurn);
-        Debug.Log(_cellSelector);
-    }
-
-    private void OnEnemiesMovementStopped()
-    {
-
+        SetLevelState(LevelState.EndLevelCheck);
     }
 }
 
 public class EntetiesMovementProcessor : IDisposable
 {
     private readonly EntityView _character;
-    private readonly Dictionary<EntityView, Route> _enemies;
+    private readonly Dictionary<EntityView, Route> _entities;
 
-    private int _width;
-    private int _height;
+    private readonly int _width;
+    private readonly int _height;
 
-    public event Action CharacterMovementStopped;
+    private int _entitiesStopMovementCount;
+
+    public event Action EntitiesMovementStopped;
 
     public EntetiesMovementProcessor(EntityView character, int width, int height)
     {
+        _entitiesStopMovementCount = 0;
         _character = character;
-        _character.TargetPositionReached += OnCharacterMovementStopped;
 
         _width = width;
         _height = height;
 
-        _enemies = new();
+        _entities = new();
     }
 
-    public void AddEnemiesRoutes(EntityView entityView, Route route)
+    public void AddEntityRoutes(EntityView entityView, Route route)
     {
-        _enemies.Add(entityView, route);
+        _entities.Add(entityView, route);
+
+        entityView.TargetPositionReached += OnEntityMovementStopped;
     }
 
-    public void StartEntetiesMovement(Vector3 targetPosition)
-    {
-        _character.StartMove(targetPosition);
-
-        foreach (KeyValuePair<EntityView, Route> pair in _enemies)
+    public void StartEntetiesMovement(Vector2Int characterTargetPosition)
+    {   
+        foreach (KeyValuePair<EntityView, Route> pair in _entities)
         {
-            EntityView enemy = pair.Key;
+            EntityView entity = pair.Key;
 
-            Vector2Int nextCoordinates = GetNextCoordinates(enemy);
+            Vector2Int nextCoordinates = entity == _character? characterTargetPosition : GetNextCoordinates(entity);
+            entity.SetCurrentCoordinates(nextCoordinates);
+
             Vector2 nextPosition = GameUtility.ConvertCoordinatesToPosition(nextCoordinates, _width, _height);
 
-            enemy.StartMove(nextPosition);
+            entity.StartMove(nextPosition);
         }
     }
 
     private Vector2Int GetNextCoordinates(EntityView entityView)
     {
         Vector2Int currentCoordinates = entityView.CurrentCoordinates;
-        Route route = _enemies[entityView];
+        Route route = _entities[entityView];
         IReadOnlyList<RouteNode> nodes = route.RouteNodes;
 
         for (int i = 0; i < nodes.Count; i++)
@@ -172,22 +170,27 @@ public class EntetiesMovementProcessor : IDisposable
         throw new InvalidOperationException($"Enemies coordinates {entityView.CurrentCoordinates} not exist in route.");
     }
 
-    private void OnCharacterMovementStopped()
+    private void OnEntityMovementStopped(EntityView view)
     {
-        CharacterMovementStopped?.Invoke();
+        _entitiesStopMovementCount++;
+
+        if(_entitiesStopMovementCount == _entities.Count)
+        {
+            _entitiesStopMovementCount = 0;
+            EntitiesMovementStopped?.Invoke();
+        }
     }
 
     public void Dispose()
     {
-        _character.TargetPositionReached -= OnCharacterMovementStopped;
+        _character.TargetPositionReached -= OnEntityMovementStopped;
     }
 }
 
 public enum LevelState
 {
     Initialization,
-    PlayerTurn,
-    EnemyTurn,
+    EntitiesMoving,
     EndLevelCheck,
     Win,
     Lose

@@ -9,7 +9,7 @@ public class EntityView : MonoBehaviour
     private Coroutine _coroutine;
     private float _animationDuration;
 
-    public event Action TargetPositionReached;
+    public event Action<EntityView> TargetPositionReached;
 
     public Vector2Int CurrentCoordinates => _currentCoordinates;
 
@@ -39,6 +39,6 @@ public class EntityView : MonoBehaviour
 
     private void OnTargetPositionReached()
     {
-        TargetPositionReached?.Invoke();
+        TargetPositionReached?.Invoke(this);
     }
 }
