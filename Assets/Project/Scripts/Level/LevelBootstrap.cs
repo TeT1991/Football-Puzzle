@@ -12,11 +12,15 @@ public class LevelBootstrap : MonoBehaviour
     [SerializeField] private Transform _enemiesParent;
     [SerializeField] private EntityView _entityViewPrefab;
     [SerializeField] private LevelProcessor _levelProcessor;
+    [SerializeField] private RouteNodeView _routeNodeViewPrefab;
+    [SerializeField] private Color _characterRouteColor;
+    [SerializeField] private Color _enemiesRouteColor;
 
     private GridBuilder _gridBuilder;
     private EntityCreator _entityCreator;
     private EntityRouteRegistry _entityRouteRegistry;
     private EntetiesMovementProcessor _entetiesMovementProcessor;
+    private RoutesRenderer _routesRenderer;
     private SkinLoader _skinLoader; //Нужен ли?
 
     private CellView[,] _cells;
@@ -35,9 +39,7 @@ public class LevelBootstrap : MonoBehaviour
         _cells = _gridBuilder.CreateTiles(levelData.Width, levelData.Height);
 
         _entityCreator = new(_characterParent, _entityViewPrefab);
-        EntityView character = CreateEntityView(
-            _entityCreator,
-            _levelDefenition.CharacterPosition);
+        EntityView character = CreateEntityView( _entityCreator, _levelDefenition.CharacterPosition);
 
         InitEntities(character);
 
@@ -45,6 +47,8 @@ public class LevelBootstrap : MonoBehaviour
 
         _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor);
 
+        _routesRenderer = new(_routeNodeViewPrefab, _cells);
+        DrawRoutes();
 
         _disposables = new();
         _disposables.Add(_entetiesMovementProcessor);
@@ -74,6 +78,16 @@ public class LevelBootstrap : MonoBehaviour
             EntityView view = CreateEntityView(entityCreator, route.StartCoordinates);
             _entityRouteRegistry.AddRoute(view, route);
             _entetiesMovementProcessor.AddEntityRoutes(view, route);
+        }
+    }
+
+    private void DrawRoutes()
+    {
+        _routesRenderer.CreateRoutes(_levelDefenition.CharacterRoute.RouteNodes, _characterRouteColor);
+
+        foreach (Route route in _levelDefenition.EnemyRoutes)
+        {
+            _routesRenderer.CreateRoutes(route.RouteNodes, _enemiesRouteColor);
         }
     }
 
