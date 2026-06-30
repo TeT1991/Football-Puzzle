@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using UnityEngine;
 
 public class LevelProcessor : MonoBehaviour
@@ -102,88 +100,6 @@ public class LevelProcessor : MonoBehaviour
     {
         _cellSelector.ClearCurrentCell();
         SetLevelState(LevelState.EndLevelCheck);
-    }
-}
-
-public class EntetiesMovementProcessor : IDisposable
-{
-    private readonly EntityView _character;
-    private readonly Dictionary<EntityView, Route> _entities;
-
-    private readonly int _width;
-    private readonly int _height;
-
-    private int _entitiesStopMovementCount;
-
-    public event Action EntitiesMovementStopped;
-
-    public EntetiesMovementProcessor(EntityView character, int width, int height)
-    {
-        _entitiesStopMovementCount = 0;
-        _character = character;
-
-        _width = width;
-        _height = height;
-
-        _entities = new();
-    }
-
-    public void AddEntityRoutes(EntityView entityView, Route route)
-    {
-        _entities.Add(entityView, route);
-
-        entityView.TargetPositionReached += OnEntityMovementStopped;
-    }
-
-    public void StartEntetiesMovement(Vector2Int characterTargetPosition)
-    {   
-        foreach (KeyValuePair<EntityView, Route> pair in _entities)
-        {
-            EntityView entity = pair.Key;
-
-            Vector2Int nextCoordinates = entity == _character? characterTargetPosition : GetNextCoordinates(entity);
-            entity.SetCurrentCoordinates(nextCoordinates);
-
-            Vector2 nextPosition = GameUtility.ConvertCoordinatesToPosition(nextCoordinates, _width, _height);
-
-            entity.StartMove(nextPosition);
-        }
-    }
-
-    private Vector2Int GetNextCoordinates(EntityView entityView)
-    {
-        Vector2Int currentCoordinates = entityView.CurrentCoordinates;
-        Route route = _entities[entityView];
-        IReadOnlyList<RouteNode> nodes = route.RouteNodes;
-
-        for (int i = 0; i < nodes.Count; i++)
-        {
-            if(nodes[i].CurrentCoordinates != currentCoordinates)
-            {
-                continue;
-            }
-
-            int nextIndex = (i + 1) % nodes.Count;
-            return nodes[nextIndex].CurrentCoordinates;
-        }
-
-        throw new InvalidOperationException($"Enemies coordinates {entityView.CurrentCoordinates} not exist in route.");
-    }
-
-    private void OnEntityMovementStopped(EntityView view)
-    {
-        _entitiesStopMovementCount++;
-
-        if(_entitiesStopMovementCount == _entities.Count)
-        {
-            _entitiesStopMovementCount = 0;
-            EntitiesMovementStopped?.Invoke();
-        }
-    }
-
-    public void Dispose()
-    {
-        _character.TargetPositionReached -= OnEntityMovementStopped;
     }
 }
 
