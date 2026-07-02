@@ -75,6 +75,11 @@ public class MainMenuPresenter : IDisposable
         _skinsShopUIView.CreateItems(_skinService.GetDatas());
     }
 
+    private void OnLevelSelectionButtonClicked()
+    {
+
+    }
+
     private void OnSkinShopButtonCloseClicked()
     {
         _skinsShopUIView.gameObject.SetActive(false);

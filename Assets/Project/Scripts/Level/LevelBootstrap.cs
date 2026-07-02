@@ -15,6 +15,7 @@ public class LevelBootstrap : MonoBehaviour
     [SerializeField] private RouteNodeView _routeNodeViewPrefab;
     [SerializeField] private Color _characterRouteColor;
     [SerializeField] private Color _enemiesRouteColor;
+    [SerializeField] private GoalMarkerView _goalMarkerViewPrefab;
 
     private GridBuilder _gridBuilder;
     private EntityCreator _entityCreator;
@@ -45,10 +46,11 @@ public class LevelBootstrap : MonoBehaviour
 
         _cellSelector.Init((CellView[,])_cells.Clone());
 
-        _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor);
+        _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor, _levelDefenition.GoalCoordinates);
 
         _routesRenderer = new(_routeNodeViewPrefab, _cells);
         DrawRoutes();
+        SetGoalMarker();
 
         _disposables = new();
         _disposables.Add(_entetiesMovementProcessor);
@@ -109,6 +111,14 @@ public class LevelBootstrap : MonoBehaviour
 
         return entityCreator.CreateEntity(offsetedPosition, coordinates);
 
+    }
+
+    private void SetGoalMarker()
+    {
+        Vector2Int goal = _levelDefenition.GoalCoordinates;
+        int width = _levelDefenition.Width;
+        int height = _levelDefenition.Height;
+        _goalMarkerViewPrefab.transform.position = GameUtility.ConvertCoordinatesToPosition(goal, width, height);
     }
 
     private void OnDestroy()

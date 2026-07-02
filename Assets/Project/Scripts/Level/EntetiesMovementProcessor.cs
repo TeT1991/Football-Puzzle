@@ -53,6 +53,26 @@ public class EntetiesMovementProcessor : IDisposable
         }
     }
 
+    public bool IsEnemyOnCoordinates(Vector2Int coordinates)
+    {
+        foreach (KeyValuePair<EntityView, Route> pair in _entities)
+        {
+            EntityView entity = pair.Key;
+
+            if (entity == _character)
+            {
+                continue;
+            }
+
+            if (entity.CurrentCoordinates == coordinates)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private Vector2Int GetNextCoordinates(EntityView entityView) //Слишком большой метод. Возможно надо раделить
     {
         Vector2Int currentCoordinates = entityView.CurrentCoordinates;

@@ -241,6 +241,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &651151276 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2791839983715744053, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+  m_PrefabInstance: {fileID: 1821443770}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88fb1d6776772184cb9caf7a2e9ce9b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &930941450
 GameObject:
   m_ObjectHideFlags: 0
@@ -427,7 +438,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d57125e0e9b3c3c429d265f378b506ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _levelDefenition: {fileID: 11400000, guid: ab54841159efc9149859111c4493a499, type: 2}
+  _levelDefenition: {fileID: 11400000, guid: a314e2e4c1ca4154695fb3ec6dce12ed, type: 2}
   _cellViewPrefab: {fileID: 8532618263547235820, guid: 78c151f8c91bf9f479e6f3d5a2f77aa4, type: 3}
   _cellsParent: {fileID: 99642918}
   _cellSelector: {fileID: 414034102}
@@ -438,6 +449,7 @@ MonoBehaviour:
   _routeNodeViewPrefab: {fileID: 6989135537274516908, guid: fc7b863a136d75a499f4e240a9952206, type: 3}
   _characterRouteColor: {r: 0, g: 0.1387968, b: 1, a: 1}
   _enemiesRouteColor: {r: 1, g: 0, b: 0, a: 1}
+  _goalMarkerViewPrefab: {fileID: 651151276}
 --- !u!4 &1701622925
 Transform:
   m_ObjectHideFlags: 0
@@ -484,6 +496,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 993228457}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1821443770
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2289345199422494296, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_Name
+      value: GoalMarker
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5196793665495074145, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: dc358d0efda29b94d953b45cdac1d126, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -493,3 +562,4 @@ SceneRoots:
   - {fileID: 993228457}
   - {fileID: 414034101}
   - {fileID: 604830696}
+  - {fileID: 1821443770}

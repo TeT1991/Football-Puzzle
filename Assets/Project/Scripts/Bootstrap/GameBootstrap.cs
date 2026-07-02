@@ -5,6 +5,7 @@ using YG;
 public class GameBootstrap : MonoBehaviour
 {
     [SerializeField] private SkinsCatalog _skinsCatalog;
+    [SerializeField] private LeaguesCatalog _leaguesCatalog;
     [SerializeField] private GlobalStateProcessor _globalStateProcessor;
     [SerializeField] private int _initialSkinId = 0;
 
@@ -12,6 +13,7 @@ public class GameBootstrap : MonoBehaviour
     private SkinService _skinService;
     private GlobalGameStateService _gloabalGameStateService;
     private WalletService _walletService;
+    private LeagueService _leagueService;
 
     private void Awake()
     {
@@ -51,6 +53,9 @@ public class GameBootstrap : MonoBehaviour
         ServiceLocator.Register<IWalletService>(_walletService);
         _walletService.IncreaseCurrency(CurrencyTypes.Soft, 123); // тестово, потом убрать
         _walletService.IncreaseCurrency(CurrencyTypes.Hard, 50); //тестово, потом убрать
+
+        _leagueService = new(_saveService, _leaguesCatalog);
+        ServiceLocator.Register<ILeagueService>(_leagueService);
     }
 
     private void InitCurrentSkin()

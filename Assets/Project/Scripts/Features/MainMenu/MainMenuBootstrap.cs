@@ -12,6 +12,7 @@ public class MainMenuBootstrap : MonoBehaviour
     private ISkinService _skinService;
     private IGlobalGameStateService _globalGameStateService;
     private IWalletService _walletService;
+    private ILeagueService _leagueService;
 
     private List<IDisposable> _disposables;
 
@@ -32,6 +33,8 @@ public class MainMenuBootstrap : MonoBehaviour
 
         _moneyPanelPresenter = new(_walletService, _softCurrencyPanelView, _hardCurrencyPanelView);
         _disposables.Add(_moneyPanelPresenter);
+
+        _leagueService = ServiceLocator.Get<ILeagueService>();
 
     }
 
