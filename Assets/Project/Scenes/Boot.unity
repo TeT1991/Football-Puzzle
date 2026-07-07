@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _skinsCatalog: {fileID: 11400000, guid: 0ed3ece57132aae45a5f6adfc1d5ff4e, type: 2}
+  _leaguesCatalog: {fileID: 11400000, guid: c26c506d0185c234c90c4c9145d84416, type: 2}
   _globalStateProcessor: {fileID: 1515917281}
   _initialSkinId: 0
 --- !u!4 &854476386
@@ -163,7 +164,7 @@ Transform:
   m_GameObject: {fileID: 854476384}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.342578, y: -0.1754376, z: -0.014116665}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3edc14ae00cbd9542b3130981735f943, type: 3}
   m_Name: League2
   m_EditorClassIdentifier: 
-  _id: 0
+  _id: 1248
   _name: School league
   _isUnlocked: 0
   _levels:

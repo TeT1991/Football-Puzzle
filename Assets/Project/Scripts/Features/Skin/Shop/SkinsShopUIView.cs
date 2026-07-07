@@ -29,8 +29,8 @@ public class SkinsShopUIView : MonoBehaviour
 
     public void Init(int selectedId)
     {
-        _closeButton.onClick.AddListener(OnCloseButtonCliked);
-        _closeBackgroundButton.onClick.AddListener(OnCloseButtonCliked);
+        _closeButton.onClick.AddListener(OnCloseButtonClicked);
+        _closeBackgroundButton.onClick.AddListener(OnCloseButtonClicked);
 
         _items = new();
         _selectedSkinId = selectedId;
@@ -117,7 +117,7 @@ public class SkinsShopUIView : MonoBehaviour
     }
 
 
-    private void OnCloseButtonCliked()
+    private void OnCloseButtonClicked()
     {
         CloseButtonClicked?.Invoke();
     }

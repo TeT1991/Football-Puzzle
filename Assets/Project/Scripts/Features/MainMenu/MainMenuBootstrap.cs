@@ -6,6 +6,7 @@ public class MainMenuBootstrap : MonoBehaviour
 {
     [SerializeField] private MainMenuUIView _mainMenuUIView;
     [SerializeField] private SkinsShopUIView _skinsShopUIView;
+    [SerializeField] private LevelSelectionUIView _levelSelectionUIView;
     [SerializeField] private MoneyPanelView _softCurrencyPanelView;
     [SerializeField] private MoneyPanelView _hardCurrencyPanelView;
 
@@ -21,14 +22,13 @@ public class MainMenuBootstrap : MonoBehaviour
 
     private void Awake()
     {
-        _skinService = ServiceLocator.Get<ISkinService>();
-
         _globalGameStateService = ServiceLocator.Get<IGlobalGameStateService>();
-
+        _skinService = ServiceLocator.Get<ISkinService>();
         _walletService = ServiceLocator.Get<IWalletService>();
+        _leagueService = ServiceLocator.Get<ILeagueService>();
 
         _disposables = new();
-        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService, _globalGameStateService, _walletService);
+        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _levelSelectionUIView, _skinService, _globalGameStateService, _walletService, _leagueService);
         _disposables.Add(_mainMenuPresenter);
 
         _moneyPanelPresenter = new(_walletService, _softCurrencyPanelView, _hardCurrencyPanelView);
