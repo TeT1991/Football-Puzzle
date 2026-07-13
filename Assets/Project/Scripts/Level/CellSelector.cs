@@ -10,7 +10,7 @@ public class CellSelector : MonoBehaviour
     private bool _isSelecting = false;
     private CellView _currentCell; //Потом надо передавать дату а не вью
 
-    public Action<CellView> CellSelected;
+    public event Action<CellView> CellSelected;
 
     public CellView CurrentCell => _currentCell;
 

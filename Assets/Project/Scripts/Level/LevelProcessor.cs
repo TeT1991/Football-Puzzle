@@ -38,7 +38,6 @@ public class LevelProcessor : MonoBehaviour
     public void StartLevel() //Дает возможность играть когда все инициализировалось. Нужо ли?
     {
         SetLevelState(LevelState.EntitiesMoving);
-        ApplyStateActions();
     }
 
     private void ApplyStateActions()

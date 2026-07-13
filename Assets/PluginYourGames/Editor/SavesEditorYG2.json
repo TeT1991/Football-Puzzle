@@ -7,14 +7,15 @@
         false,
         false
     ],
-    "idSave": 374,
+    "idSave": 376,
     "Data": {
-        "SoftCurrency": 16505,
-        "HardCurrency": 6750,
+        "SoftCurrency": 16628,
+        "HardCurrency": 6800,
         "CurrentSkinId": 0,
         "UnlockedSkins": [
             0,
             1
-        ]
+        ],
+        "LeagueProgress": []
     }
 }

@@ -9,6 +9,7 @@ public class SaveData
 
     public int CurrentSkinId;
     public List<int> UnlockedSkins;
+    public List<LeagueProgressData> LeagueProgress;
 
     public static SaveData CreateNew()
     {
@@ -17,7 +18,15 @@ public class SaveData
             SoftCurrency = 0,
             HardCurrency = 0,
             CurrentSkinId = 0,
-            UnlockedSkins = new() { 0 }
+            UnlockedSkins = new() { 0 },
+            LeagueProgress = new()
         };
     }
+}
+
+[System.Serializable]
+public class LeagueProgressData
+{
+    public int LeagueId;
+    public int UnlockedLevelCount = 1;
 }

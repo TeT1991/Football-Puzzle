@@ -41,13 +41,13 @@ public class LevelResultPresenter : IDisposable
 
     private void GoToNextLevel()
     {
-        _globalGameStateService.SetState(GlobalGameState.MainMenu); //Пока вернемся в главное меню, потом сделаем переход на уровень
+        _globalGameStateService.SetState(GlobalGameState.MainMenu); //РџРѕРєР° РІРµСЂРЅРµРјСЃСЏ РІ РіР»Р°РІРЅРѕРµ РјРµРЅСЋ, РїРѕС‚РѕРј СЃРґРµР»Р°РµРј РїРµСЂРµС…РѕРґ РЅР° СѓСЂРѕРІРµРЅСЊ
     }
 
     private void ApplyWinActions()
     {
         UnityEngine.Debug.Log("WIN");
-        _levelResultView.ShowStars(3); //тестово, потом поменять
+        _levelResultView.ShowStars(3); //С‚РµСЃС‚РѕРІРѕ, РїРѕС‚РѕРј РїРѕРјРµРЅСЏС‚СЊ
     }
 
     private void ApplyLoseActions()

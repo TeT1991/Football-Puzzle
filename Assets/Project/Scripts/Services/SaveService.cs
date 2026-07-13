@@ -1,4 +1,6 @@
 using YG;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class SaveService : ISaveService
 {
@@ -85,5 +87,62 @@ public class SaveService : ISaveService
         {
             UnityEngine.Debug.Log($"skin {id} akready Exist");
         }
+    }
+
+    public int GetUnlockedLevelCount(int leagueId)
+    {
+        LeagueProgressData progress = GetLeagueProgress(leagueId, false);
+        return progress == null ? 1 : Mathf.Max(1, progress.UnlockedLevelCount);
+    }
+
+    public bool IsLevelUnlocked(int leagueId, int levelIndex)
+    {
+        return levelIndex >= 0 && levelIndex < GetUnlockedLevelCount(leagueId);
+    }
+
+    public void UnlockLevel(int leagueId, int levelIndex)
+    {
+        if (levelIndex < 0)
+        {
+            return;
+        }
+
+        LeagueProgressData progress = GetLeagueProgress(leagueId, true);
+        int requiredUnlockedCount = levelIndex + 1;
+
+        if (requiredUnlockedCount <= progress.UnlockedLevelCount)
+        {
+            return;
+        }
+
+        progress.UnlockedLevelCount = requiredUnlockedCount;
+        Save();
+    }
+
+    private LeagueProgressData GetLeagueProgress(int leagueId, bool createIfMissing)
+    {
+        _saveData.LeagueProgress ??= new List<LeagueProgressData>();
+
+        foreach (LeagueProgressData progress in _saveData.LeagueProgress)
+        {
+            if (progress != null && progress.LeagueId == leagueId)
+            {
+                return progress;
+            }
+        }
+
+        if (createIfMissing == false)
+        {
+            return null;
+        }
+
+        LeagueProgressData newProgress = new()
+        {
+            LeagueId = leagueId,
+            UnlockedLevelCount = 1
+        };
+
+        _saveData.LeagueProgress.Add(newProgress);
+        return newProgress;
     }
 }

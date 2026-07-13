@@ -7,4 +7,8 @@ public interface ISaveService : IService
 
     void SaveCurrencyCount(CurrencyTypes type, int count);
     int GetCurrencyCount(CurrencyTypes type);
+
+    int GetUnlockedLevelCount(int leagueId);
+    bool IsLevelUnlocked(int leagueId, int levelIndex);
+    void UnlockLevel(int leagueId, int levelIndex);
 };

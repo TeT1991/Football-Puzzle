@@ -153,6 +153,9 @@ public class EntetiesMovementProcessor : IDisposable
 
     public void Dispose()
     {
-        _character.TargetPositionReached -= OnEntityMovementStopped;
+        foreach (KeyValuePair<EntityView, Route> pair in _entities)
+        {
+            pair.Key.TargetPositionReached -= OnEntityMovementStopped;
+        }
     }
 }

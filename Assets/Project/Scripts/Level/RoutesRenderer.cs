@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class RoutesRenderer
@@ -12,7 +11,6 @@ public class RoutesRenderer
     {
         _routeNodeView = routeNodeView;
         _cells = cells;
-
     }
 
     public void CreateRoutes(IReadOnlyList<RouteNode> RouteNodes, Color color)

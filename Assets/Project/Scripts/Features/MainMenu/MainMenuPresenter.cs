@@ -93,7 +93,7 @@ public class MainMenuPresenter : IDisposable
     {
         _mainMenuUIView.PlayButtonClicked -= OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked -= OnSkinShopButtonClicked;
-        _skinsShopUIView.CloseButtonClicked -= OnSkinShopButtonCloseClicked;
+        _skinsShopUIView.CloseButtonClicked -= CloseAllWindows;
         _skinsShopUIView.BuyButtonClicked -= TryBuySkin;
         _skinsShopUIView.SkinButonClicked -= TryChangeSkin;
         _skinService.SkinChanged -= _skinsShopUIView.MarkItemAsSelected;
