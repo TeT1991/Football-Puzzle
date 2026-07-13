@@ -16,6 +16,7 @@ public class LevelBootstrap : MonoBehaviour
     [SerializeField] private Color _characterRouteColor;
     [SerializeField] private Color _enemiesRouteColor;
     [SerializeField] private GoalMarkerView _goalMarkerViewPrefab;
+    [SerializeField] private LevelResultView _levelResultView;
 
     private GridBuilder _gridBuilder;
     private EntityCreator _entityCreator;
@@ -23,6 +24,7 @@ public class LevelBootstrap : MonoBehaviour
     private EntetiesMovementProcessor _entetiesMovementProcessor;
     private RoutesRenderer _routesRenderer;
     private SkinLoader _skinLoader; //Нужен ли?
+    private LevelResultPresenter _levelResultPresenter;
 
     private CellView[,] _cells;
 
@@ -52,8 +54,12 @@ public class LevelBootstrap : MonoBehaviour
         DrawRoutes();
         SetGoalMarker();
 
+        _levelResultPresenter = new(_levelResultView);
+        _levelProcessor.LevelEnded += _levelResultPresenter.ApplyResultActions;
+
         _disposables = new();
         _disposables.Add(_entetiesMovementProcessor);
+        _disposables.Add(_levelResultPresenter);
 
         _levelProcessor.StartLevel(); //после всех инициализиаций
     }

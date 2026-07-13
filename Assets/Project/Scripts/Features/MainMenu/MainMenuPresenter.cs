@@ -5,15 +5,13 @@ public class MainMenuPresenter : IDisposable
 {
     private readonly MainMenuUIView _mainMenuUIView;
     private readonly SkinsShopUIView _skinsShopUIView;
-    private readonly LevelSelectionUIView _levelSelectionUIView;
 
     private readonly IGlobalGameStateService _globalStateGameService;
     private readonly ISkinService _skinService;
     private readonly IWalletService _walletService;
-    private readonly ILeagueService _leagueService;
 
-    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView, LevelSelectionUIView levelSelectionUIView,
-        ISkinService skinService, IGlobalGameStateService globalStateGameService, IWalletService walletService, ILeagueService leagueService)
+    public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView,
+        ISkinService skinService, IGlobalGameStateService globalStateGameService, IWalletService walletService)
     {
         _globalStateGameService = globalStateGameService;
         _skinService = skinService;
@@ -23,22 +21,15 @@ public class MainMenuPresenter : IDisposable
         _mainMenuUIView.Init();
         _skinsShopUIView = skinsShopUIView;
         _skinsShopUIView.Init(_skinService.GetCurrent());
-        _levelSelectionUIView = levelSelectionUIView;
-        _levelSelectionUIView.Init();
-
 
         _skinService.SkinChanged += _skinsShopUIView.MarkItemAsSelected;
 
         _mainMenuUIView.PlayButtonClicked += OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked += OnSkinShopButtonClicked;
-        _mainMenuUIView.LevelSelectionButtonClicked += OnLevelSelectionButtonClicked;
 
         _skinsShopUIView.SkinButonClicked += TryChangeSkin;
         _skinsShopUIView.BuyButtonClicked += TryBuySkin;
         _skinsShopUIView.CloseButtonClicked += CloseAllWindows;
-
-        _levelSelectionUIView.CloseButtonClicked += CloseAllWindows;
-        _leagueService = leagueService;
     }
 
     private void TryChangeSkin(int id)
@@ -91,20 +82,10 @@ public class MainMenuPresenter : IDisposable
         _mainMenuUIView.gameObject.SetActive(true);
     }
 
-    private void OnLevelSelectionButtonClicked()
-
-    {
-        CloseAllWindows();
-        _levelSelectionUIView.gameObject.SetActive(true);
-
-        _levelSelectionUIView.CreateItems(_leagueService.GetDatas());
-    }
-
 
     private void CloseAllWindows()
     {
         _mainMenuUIView.gameObject.SetActive(true);
-        _levelSelectionUIView.gameObject.SetActive(false);
         _skinsShopUIView.gameObject.SetActive(false);
     }
 
@@ -116,6 +97,5 @@ public class MainMenuPresenter : IDisposable
         _skinsShopUIView.BuyButtonClicked -= TryBuySkin;
         _skinsShopUIView.SkinButonClicked -= TryChangeSkin;
         _skinService.SkinChanged -= _skinsShopUIView.MarkItemAsSelected;
-        _levelSelectionUIView.LeagueButtonClicked -= OnLevelSelectionButtonClicked;
     }
 }

@@ -15,6 +15,8 @@ public class LevelProcessor : MonoBehaviour
 
     private CellView[,] _cells;
 
+    public event Action<LevelResult> LevelEnded;
+
     private void OnDestroy()
     {
         _cellSelector.CellSelected -= TryMoveCharacter;
@@ -83,12 +85,14 @@ public class LevelProcessor : MonoBehaviour
         if (_characterView.CurrentCoordinates == _goalCoordinates)
         {
             SetLevelState(LevelState.Win);
+            LevelEnded?.Invoke(LevelResult.Win);
             return;
         }
 
         if (_entetiesMovementProcessor.IsEnemyOnCoordinates(_characterView.CurrentCoordinates))
         {
             SetLevelState(LevelState.Lose);
+            LevelEnded?.Invoke(LevelResult.Lose);
             return;
         }
 

@@ -10,7 +10,6 @@ public class MainMenuUIView : MonoBehaviour
 
     public event Action PlayButtonClicked;
     public event Action SkinsShopButtonClicked;
-    public event Action LevelSelectionButtonClicked;
 
     private void OnDestroy()
     {
@@ -23,7 +22,6 @@ public class MainMenuUIView : MonoBehaviour
     {
         _playButton.onClick.AddListener(OnPlayButtonClicked);
         _skinsShopButton.onClick.AddListener(OnSkinsShopButtonClicked);
-        _levelSelectionButton.onClick.AddListener(OnLevelSelevtionButtonCliked);
     }
 
     private void OnPlayButtonClicked()
@@ -34,10 +32,5 @@ public class MainMenuUIView : MonoBehaviour
     private void OnSkinsShopButtonClicked()
     {
         SkinsShopButtonClicked?.Invoke();
-    }
-
-    private void OnLevelSelevtionButtonCliked()
-    {
-        LevelSelectionButtonClicked?.Invoke();
     }
 }
