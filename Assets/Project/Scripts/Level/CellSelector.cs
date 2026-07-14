@@ -5,6 +5,7 @@ public class CellSelector : MonoBehaviour
 {
     private CellView[,] _cells;
     private Camera _camera;
+    private GameInput _gameInput;
 
     private Vector3 _mouseWorldPosition;
     private bool _isSelecting = false;
@@ -19,31 +20,12 @@ public class CellSelector : MonoBehaviour
         _camera = Camera.main;
     }
 
-    public void Init(CellView[,] cells)
+    public void Init(CellView[,] cells, GameInput gameInput)
     {
         _cells = cells;
-    }
+        _gameInput = gameInput;
 
-    public void Update()
-    {
-        if (_isSelecting)
-        {
-            _mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
-            // подсветить клетки прри наведении
-
-            if (Input.GetMouseButtonUp(0))
-            {
-                if (TryGetCell(_mouseWorldPosition,
-                    out CellView cell))
-                {
-                    _currentCell = cell;
-                    CellSelected?.Invoke(cell);
-                    // StopSelecting();
-                    Debug.Log(cell.Coordinates);
-                }
-            }
-
-        }
+        _gameInput.Released += OnInputReleased;
     }
 
     public bool TryGetCell(Vector2 position, out CellView cell)
@@ -82,6 +64,24 @@ public class CellSelector : MonoBehaviour
     public void ClearCurrentCell()
     {
         _currentCell = null;
+    }
+
+    private void OnInputReleased(Vector2 screenPosition)
+    {
+        if (_isSelecting == false)
+        {
+            return;
+        }
+
+        _mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
+
+        if (TryGetCell(_mouseWorldPosition,
+            out CellView cell))
+        {
+            _currentCell = cell;
+            CellSelected?.Invoke(cell);
+            StopSelecting();
+        }
     }
 
     private void OnCellSelected()

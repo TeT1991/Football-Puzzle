@@ -60,8 +60,6 @@ public class LevelProcessor : MonoBehaviour
                 ApplyLoseState();
                 break;
         }
-
-        Debug.Log(_levelState);
     }
 
     private void ApplyWinState()

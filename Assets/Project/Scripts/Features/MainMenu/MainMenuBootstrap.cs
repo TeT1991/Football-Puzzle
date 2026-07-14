@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class MainMenuBootstrap : MonoBehaviour
 {
+    [SerializeField] private GameInput _gameInput;
+
     [SerializeField] private MainMenuUIView _mainMenuUIView;
     [SerializeField] private SkinsShopUIView _skinsShopUIView;
     [SerializeField] private MoneyPanelView _softCurrencyPanelView;
@@ -11,7 +13,7 @@ public class MainMenuBootstrap : MonoBehaviour
     [SerializeField] private Transform _metamapParent;
     [SerializeField] private Transform _metamapStartPoint;
     [SerializeField] private LeaguesCatalog _leaguesCatalog;
-    [SerializeField] private MetamapInput _metamapInput;
+    [SerializeField] private MetamapScroller _metaMapScroller;
 
     private ISkinService _skinService;
     private IGlobalGameStateService _globalGameStateService;
@@ -40,7 +42,7 @@ public class MainMenuBootstrap : MonoBehaviour
         _metamapBuilder = new(_metamapParent, _metamapStartPoint);
         CreateMetamap();
 
-        _metamapInput.Init(_metamapBuilder.Bounds);
+        _metaMapScroller.Init(_gameInput,_metamapBuilder.Bounds);
     }
 
     private void CreateMetamap()
@@ -56,7 +58,7 @@ public class MainMenuBootstrap : MonoBehaviour
     {
         foreach (var item in _disposables)
         {
-            Debug.Log(item.GetType() + "is dispoased");
+            //Debug.Log(item.GetType() + "is dispoased");
             item.Dispose();
         }
     }

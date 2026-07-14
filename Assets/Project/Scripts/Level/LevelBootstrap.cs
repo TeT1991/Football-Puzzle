@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class LevelBootstrap : MonoBehaviour
 {
+    [SerializeField] private GameInput _gameInput;
+
     [SerializeField] private LevelDefinition _levelDefenition;
     [SerializeField] private CellView _cellViewPrefab;
     [SerializeField] private Transform _cellsParent;
@@ -46,7 +48,7 @@ public class LevelBootstrap : MonoBehaviour
 
         InitEntities(character);
 
-        _cellSelector.Init((CellView[,])_cells.Clone());
+        _cellSelector.Init((CellView[,])_cells.Clone(), _gameInput);
 
         _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor, _levelDefenition.GoalCoordinates);
 
@@ -57,9 +59,11 @@ public class LevelBootstrap : MonoBehaviour
         _levelResultPresenter = new(_levelResultView);
         _levelProcessor.LevelEnded += _levelResultPresenter.ApplyResultActions;
 
-        _disposables = new();
-        _disposables.Add(_entetiesMovementProcessor);
-        _disposables.Add(_levelResultPresenter);
+        _disposables = new()
+        {
+            _entetiesMovementProcessor,
+            _levelResultPresenter
+        };
 
         _levelProcessor.StartLevel(); //после всех инициализиаций
     }

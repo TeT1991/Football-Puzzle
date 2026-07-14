@@ -46,7 +46,6 @@ public class LevelResultPresenter : IDisposable
 
     private void ApplyWinActions()
     {
-        UnityEngine.Debug.Log("WIN");
         _levelResultView.ShowStars(3); //тестово, потом поменять
     }
 

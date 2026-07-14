@@ -4,6 +4,6 @@ public class SkinLoader
 {
     public void Load()
     {
-        Debug.Log("Загружен скин - " + ServiceLocator.Get<ISkinService>().GetCurrent());
+       // Debug.Log("Загружен скин - " + ServiceLocator.Get<ISkinService>().GetCurrent());
     }
 }
