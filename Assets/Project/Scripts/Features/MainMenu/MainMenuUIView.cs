@@ -6,7 +6,6 @@ public class MainMenuUIView : MonoBehaviour
 {
     [SerializeField] private Button _playButton;
     [SerializeField] private Button _skinsShopButton;
-    [SerializeField] private Button _levelSelectionButton;
 
     public event Action PlayButtonClicked;
     public event Action SkinsShopButtonClicked;
@@ -15,7 +14,6 @@ public class MainMenuUIView : MonoBehaviour
     {
         _playButton.onClick.RemoveAllListeners();
         _skinsShopButton.onClick.RemoveAllListeners();
-        _levelSelectionButton.onClick.RemoveAllListeners();
     }
 
     public void Init()

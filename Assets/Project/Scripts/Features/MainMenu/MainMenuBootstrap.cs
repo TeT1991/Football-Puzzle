@@ -8,6 +8,10 @@ public class MainMenuBootstrap : MonoBehaviour
     [SerializeField] private SkinsShopUIView _skinsShopUIView;
     [SerializeField] private MoneyPanelView _softCurrencyPanelView;
     [SerializeField] private MoneyPanelView _hardCurrencyPanelView;
+    [SerializeField] private Transform _metamapParent;
+    [SerializeField] private Transform _metamapStartPoint;
+    [SerializeField] private LeaguesCatalog _leaguesCatalog;
+    [SerializeField] private MetamapInput _metamapInput;
 
     private ISkinService _skinService;
     private IGlobalGameStateService _globalGameStateService;
@@ -17,6 +21,8 @@ public class MainMenuBootstrap : MonoBehaviour
 
     private MainMenuPresenter _mainMenuPresenter;
     private MoneyPanelPresenter _moneyPanelPresenter;
+
+    private MetamapBuilder _metamapBuilder;
 
     private void Awake()
     {
@@ -30,6 +36,20 @@ public class MainMenuBootstrap : MonoBehaviour
 
         _moneyPanelPresenter = new(_walletService, _softCurrencyPanelView, _hardCurrencyPanelView);
         _disposables.Add(_moneyPanelPresenter);
+
+        _metamapBuilder = new(_metamapParent, _metamapStartPoint);
+        CreateMetamap();
+
+        _metamapInput.Init(_metamapBuilder.Bounds);
+    }
+
+    private void CreateMetamap()
+    {
+        for (int i = 0; i < _leaguesCatalog.Catalog.Count; i++)
+        {
+            MetamapLocationView location = _leaguesCatalog.Catalog[i].MetamapLocationView;
+            _metamapBuilder.CreateLocation(location);
+        }
     }
 
     private void OnDestroy()

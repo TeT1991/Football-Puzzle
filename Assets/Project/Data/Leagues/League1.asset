@@ -10,11 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3edc14ae00cbd9542b3130981735f943, type: 3}
-  m_Name: League2
+  m_Name: League1
   m_EditorClassIdentifier: 
-  _id: 1248
-  _name: School league
+  _id: 1
+  _name: School
   _isUnlocked: 0
-  _levels:
-  - {fileID: 11400000, guid: a314e2e4c1ca4154695fb3ec6dce12ed, type: 2}
-  - {fileID: 11400000, guid: ab54841159efc9149859111c4493a499, type: 2}
+  _levels: []
+  _metamaplocationView: {fileID: 8383669760358423904, guid: c1fccc4f95a43384483da4774274956b, type: 3}
