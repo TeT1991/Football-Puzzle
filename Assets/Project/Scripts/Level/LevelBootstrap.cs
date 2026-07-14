@@ -27,6 +27,7 @@ public class LevelBootstrap : MonoBehaviour
     private RoutesRenderer _routesRenderer;
     private SkinLoader _skinLoader; //Нужен ли?
     private LevelResultPresenter _levelResultPresenter;
+    private PointerGestureRecognizer _pointerGestureRecognizer;
 
     private CellView[,] _cells;
 
@@ -35,6 +36,8 @@ public class LevelBootstrap : MonoBehaviour
     private void Awake()
     {
         LevelData levelData = GenerateLevelData();
+        _pointerGestureRecognizer = new(_gameInput);
+
 
         _skinLoader = new();
         _skinLoader.Load();
@@ -48,7 +51,7 @@ public class LevelBootstrap : MonoBehaviour
 
         InitEntities(character);
 
-        _cellSelector.Init((CellView[,])_cells.Clone(), _gameInput);
+        _cellSelector.Init((CellView[,])_cells.Clone(), _pointerGestureRecognizer);
 
         _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor, _levelDefenition.GoalCoordinates);
 

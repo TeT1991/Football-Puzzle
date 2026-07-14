@@ -3,10 +3,13 @@ using UnityEngine;
 
 public class MetamapBuilder
 {
+    private readonly LeaguesCatalog _catalog;
     private readonly Transform _locationsParent;
     private readonly Transform _metamapStartPoint;
     private readonly List<MetamapLocationView> _locations;
+    private readonly List<MetamapLevelMarker> _markers;
     private readonly List<Renderer> _renderers;
+    private readonly MetamapLevelMarker _metamapLevelMarkerPrefab;
 
     public Bounds Bounds => GetBounds();
 
@@ -16,6 +19,16 @@ public class MetamapBuilder
         _metamapStartPoint = metamapStartPoint;
         _locations = new();
         _renderers = new();
+    }
+
+    public void BuildMetamap()
+    {
+        foreach (LeagueDefinition league in _catalog.Catalog)
+        {
+            CreateLocation(league.MetamapLocationView);
+
+            //CreateLevelMarkers()
+        }
     }
 
     public void CreateLocation(MetamapLocationView metamapLocationView)
@@ -32,6 +45,14 @@ public class MetamapBuilder
         }
 
         _renderers.Add(location.Renderer);
+    }
+
+    private void CreateLevelMarkers(int leagueIndex,List<LevelDefinition> levels)
+    {
+        for (int i = 0; i < levels.Count; i++)
+        {
+            
+        }
     }
 
     public Bounds GetBounds()

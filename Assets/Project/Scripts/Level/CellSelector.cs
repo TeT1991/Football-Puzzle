@@ -5,9 +5,8 @@ public class CellSelector : MonoBehaviour
 {
     private CellView[,] _cells;
     private Camera _camera;
-    private GameInput _gameInput;
+    private PointerGestureRecognizer _gestureRecognizer;
 
-    private Vector3 _mouseWorldPosition;
     private bool _isSelecting = false;
     private CellView _currentCell; //Потом надо передавать дату а не вью
 
@@ -20,12 +19,12 @@ public class CellSelector : MonoBehaviour
         _camera = Camera.main;
     }
 
-    public void Init(CellView[,] cells, GameInput gameInput)
+    public void Init(CellView[,] cells, PointerGestureRecognizer gestureRecognizer)
     {
         _cells = cells;
-        _gameInput = gameInput;
+        _gestureRecognizer = gestureRecognizer;
 
-        _gameInput.Released += OnInputReleased;
+        _gestureRecognizer.Tapped += OnTapped;
     }
 
     public bool TryGetCell(Vector2 position, out CellView cell)
@@ -66,21 +65,20 @@ public class CellSelector : MonoBehaviour
         _currentCell = null;
     }
 
-    private void OnInputReleased(Vector2 screenPosition)
+    private void OnTapped(Vector2 screenPosition)
     {
         if (_isSelecting == false)
         {
             return;
         }
 
-        _mouseWorldPosition = _camera.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 worldPosition = _camera.ScreenToWorldPoint(screenPosition);
 
-        if (TryGetCell(_mouseWorldPosition,
+        if (TryGetCell(worldPosition,
             out CellView cell))
         {
             _currentCell = cell;
             CellSelected?.Invoke(cell);
-            StopSelecting();
         }
     }
 
