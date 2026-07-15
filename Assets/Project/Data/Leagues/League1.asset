@@ -15,5 +15,14 @@ MonoBehaviour:
   _id: 1
   _name: School
   _isUnlocked: 0
-  _levels: []
-  _metamaplocationView: {fileID: 8383669760358423904, guid: c1fccc4f95a43384483da4774274956b, type: 3}
+  _levels:
+  - {fileID: 11400000, guid: b29420d4bd983424e9d6a91d4ad71b64, type: 2}
+  - {fileID: 11400000, guid: 04968cb3a66a84f42bdcd9edc6d6e78e, type: 2}
+  - {fileID: 11400000, guid: 647af2fec9cfc714497894bad7bccce2, type: 2}
+  - {fileID: 11400000, guid: e71026391781440489e43e711e10dc6f, type: 2}
+  - {fileID: 11400000, guid: 7925b7adba01f8b448dbd4e732a57844, type: 2}
+  - {fileID: 11400000, guid: c3f4a27cb9739e84999a42246d7c7f75, type: 2}
+  - {fileID: 11400000, guid: a3ace854135ac544e87ee29195086863, type: 2}
+  - {fileID: 11400000, guid: 0de48b75684ae3647be49031d39eaec9, type: 2}
+  - {fileID: 11400000, guid: faad84fffd37d6c488d39d668d9b547d, type: 2}
+  _metamaplocationView: {fileID: 3052788398086892895, guid: 4456260123935554894f175fdf64731b, type: 3}

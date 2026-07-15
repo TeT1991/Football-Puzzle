@@ -22,6 +22,7 @@ public class MetamapBuilder
         _markersParent = markersParent;
         _locations = new();
         _renderers = new();
+        _markers = new();
     }
 
     public void BuildMetamap()
@@ -34,7 +35,7 @@ public class MetamapBuilder
         }
     }
 
-    public void CreateLocation(MetamapLocationView metamapLocationView)
+    public MetamapLocationView CreateLocation(MetamapLocationView metamapLocationView)
     {
         MetamapLocationView location = MonoBehaviour.Instantiate(metamapLocationView, _locationsParent);
 
@@ -48,12 +49,16 @@ public class MetamapBuilder
         }
 
         _renderers.Add(location.Renderer);
+
+        return location;
     }
 
-    public void CreateLevelMarker(MetamapLevelData data)
+    public void CreateLevelMarker(MetamapLevelData data, Transform position)
     {
-       MetamapLevelMarker marker =  MonoBehaviour.Instantiate(_metamapLevelMarkerPrefab, _markersParent);
-       marker.Init(data);
+        MetamapLevelMarker marker = MonoBehaviour.Instantiate(_metamapLevelMarkerPrefab, _markersParent);
+        marker.Init(data);
+        marker.transform.parent = position;
+        marker.transform.localPosition = Vector3.zero;
         _markers.Add(marker);
     }
 

@@ -24,7 +24,7 @@ public class LevelMarkerPoints : MonoBehaviour
     [SerializeField] private float gizmoRadius = 0.25f;
     [SerializeField] private Color gizmoColor = Color.yellow;
 
-    private const int SamplesPerSegment = 30;
+    private const int SamplesPerSegment = 100;
 
     public IReadOnlyList<Transform> Points => GetPoints();
 
@@ -210,21 +210,33 @@ public class LevelMarkerPoints : MonoBehaviour
         for (int i = 0; i < pointCount - 1; i++)
         {
             Vector3 previous = GetBezierPoint(spline, i, 0f);
+            float previousT = 0f;
 
             for (int s = 1; s <= SamplesPerSegment; s++)
             {
-                float t = s / (float)SamplesPerSegment;
-                Vector3 current = GetBezierPoint(spline, i, t);
+                float currentT = s / (float)SamplesPerSegment;
+                Vector3 current = GetBezierPoint(spline, i, currentT);
+
                 float stepLength = Vector3.Distance(previous, current);
+
+                if (stepLength <= Mathf.Epsilon)
+                {
+                    previous = current;
+                    previousT = currentT;
+                    continue;
+                }
 
                 if (currentDistance + stepLength >= targetDistance)
                 {
                     float stepT = (targetDistance - currentDistance) / stepLength;
-                    return Vector3.Lerp(previous, current, stepT);
+                    float bezierT = Mathf.Lerp(previousT, currentT, stepT);
+
+                    return GetBezierPoint(spline, i, bezierT);
                 }
 
                 currentDistance += stepLength;
                 previous = current;
+                previousT = currentT;
             }
         }
 

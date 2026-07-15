@@ -5,8 +5,6 @@ using UnityEngine;
 public class LevelBootstrap : MonoBehaviour
 {
     [SerializeField] private GameInput _gameInput;
-
-    [SerializeField] private LevelDefinition _levelDefenition;
     [SerializeField] private CellView _cellViewPrefab;
     [SerializeField] private Transform _cellsParent;
     [SerializeField] private CellSelector _cellSelector;
@@ -20,6 +18,7 @@ public class LevelBootstrap : MonoBehaviour
     [SerializeField] private GoalMarkerView _goalMarkerViewPrefab;
     [SerializeField] private LevelResultView _levelResultView;
 
+    private LevelDefinition _levelDefenition;
     private GridBuilder _gridBuilder;
     private EntityCreator _entityCreator;
     private EntityRouteRegistry _entityRouteRegistry;
@@ -35,6 +34,8 @@ public class LevelBootstrap : MonoBehaviour
 
     private void Awake()
     {
+        ILevelSelectionService levelSelectionService = ServiceLocator.Get<ILevelSelectionService>();
+        _levelDefenition = levelSelectionService.SelectedLevel;
         LevelData levelData = GenerateLevelData();
         _pointerGestureRecognizer = new(_gameInput);
 

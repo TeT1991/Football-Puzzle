@@ -22,11 +22,6 @@ public class LevelSelector
         _pointerGestureRecognizer.Tapped += OnTapped;
     }
 
-    public void AddLevelMarker(MetamapLevelMarker marker)
-    {
-        _markers.Add(marker);
-    }
-
     private void OnTapped(Vector2 screenPosition)
     {
         Vector3 worldPosition = _camera.ScreenToWorldPoint(screenPosition);

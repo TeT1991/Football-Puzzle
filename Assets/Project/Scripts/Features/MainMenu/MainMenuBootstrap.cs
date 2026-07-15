@@ -31,7 +31,7 @@ public class MainMenuBootstrap : MonoBehaviour
         _skinService = ServiceLocator.Get<ISkinService>();
         _walletService = ServiceLocator.Get<IWalletService>();
         _disposables = new();
-        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService, _globalGameStateService, _walletService);
+        _mainMenuPresenter = new(_mainMenuUIView, _skinsShopUIView, _skinService, _walletService);
         _disposables.Add(_mainMenuPresenter);
         _moneyPanelPresenter = new(_walletService, _softCurrencyPanelView, _hardCurrencyPanelView);
         _disposables.Add(_moneyPanelPresenter);

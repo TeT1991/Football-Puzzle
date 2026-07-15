@@ -6,14 +6,12 @@ public class MainMenuPresenter : IDisposable
     private readonly MainMenuUIView _mainMenuUIView;
     private readonly SkinsShopUIView _skinsShopUIView;
 
-    private readonly IGlobalGameStateService _globalStateGameService;
     private readonly ISkinService _skinService;
     private readonly IWalletService _walletService;
 
     public MainMenuPresenter(MainMenuUIView mainMenuView, SkinsShopUIView skinsShopUIView,
-        ISkinService skinService, IGlobalGameStateService globalStateGameService, IWalletService walletService)
+        ISkinService skinService, IWalletService walletService)
     {
-        _globalStateGameService = globalStateGameService;
         _skinService = skinService;
         _walletService = walletService;
 
@@ -24,7 +22,6 @@ public class MainMenuPresenter : IDisposable
 
         _skinService.SkinChanged += _skinsShopUIView.MarkItemAsSelected;
 
-        _mainMenuUIView.PlayButtonClicked += OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked += OnSkinShopButtonClicked;
 
         _skinsShopUIView.SkinButonClicked += TryChangeSkin;
@@ -63,11 +60,6 @@ public class MainMenuPresenter : IDisposable
         }
     }
 
-    private void OnPlayButtonCliked()
-    {
-        _globalStateGameService.SetState(GlobalGameState.Level);
-    }
-
     private void OnSkinShopButtonClicked()
     {
         CloseAllWindows();
@@ -91,7 +83,6 @@ public class MainMenuPresenter : IDisposable
 
     public void Dispose()
     {
-        _mainMenuUIView.PlayButtonClicked -= OnPlayButtonCliked;
         _mainMenuUIView.SkinsShopButtonClicked -= OnSkinShopButtonClicked;
         _skinsShopUIView.CloseButtonClicked -= CloseAllWindows;
         _skinsShopUIView.BuyButtonClicked -= TryBuySkin;

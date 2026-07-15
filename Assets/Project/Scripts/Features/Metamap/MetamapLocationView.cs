@@ -17,5 +17,6 @@ public class MetamapLocationView : MonoBehaviour
 
     public SpriteShapeController Path => _path;
     public Renderer Renderer => _renderer;
+    public LevelMarkerPoints LevelMarkerPoints => _levelMarkerPoints;
 
 }
