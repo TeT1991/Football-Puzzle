@@ -1,37 +1,40 @@
+using System;
 using UnityEngine;
 
-public class MetamapScroller : MonoBehaviour
+public class MetamapScroller : IDisposable
 {
-    [SerializeField] private Transform _mapRoot;
-    [SerializeField] private float _dragTreshold;
+    private readonly Transform _mapRoot;
+    private readonly float _dragTreshold;
 
-    private GameInput _gameInput;
+    private readonly PointerGestureRecognizer _pointerGestureRecognizer;
 
-    private Camera _camera;
-    private int _screenHeight;
+    private readonly Camera _camera;
+    private readonly int _screenHeight;
+    private readonly float _minMapY;
+    private readonly float _maxMapY;
 
     private Vector2 _startPointPosition;
     private float _startMapY;
     private bool _isDragging;
-    private float _minMapY;
-    private float _maxMapY;
 
-    public void Init(GameInput gameInput, Bounds bounds)
+    public MetamapScroller(PointerGestureRecognizer pointerGestureRecognizer, Bounds bounds, Transform mapRoot, float dragTreshold)
     {
         _camera = Camera.main;
         _screenHeight = Screen.height;
 
-        _gameInput = gameInput;
+        _pointerGestureRecognizer = pointerGestureRecognizer;
 
         float cameraBottom = _camera.transform.position.y - _camera.orthographicSize;
         float cameraTop = _camera.transform.position.y + _camera.orthographicSize;
 
+        _mapRoot = mapRoot;
+        _dragTreshold = dragTreshold;
+
         _minMapY = _mapRoot.position.y + cameraTop - bounds.max.y;
         _maxMapY = _mapRoot.position.y + cameraBottom - bounds.min.y;
 
-        _gameInput.Pressed += OnInputPressed;
-        _gameInput.Dragged += OnInputDragged;
-        _gameInput.Released += OnInputReleased;
+        _pointerGestureRecognizer.DragStarted += OnInputPressed;
+        _pointerGestureRecognizer.Dragged += OnInputDragged;
     }
 
     private void OnInputPressed(Vector2 postion)
@@ -60,15 +63,9 @@ public class MetamapScroller : MonoBehaviour
         _mapRoot.position = newMapPosition;
     }
 
-    public void OnInputReleased(Vector2 _)
+    public void Dispose()
     {
-        
-    }
-
-    private void OnDestroy()
-    {
-        _gameInput.Pressed -= OnInputPressed;
-        _gameInput.Dragged -= OnInputDragged;
-        _gameInput.Released -= OnInputReleased;
+        _pointerGestureRecognizer.DragStarted -= OnInputPressed;
+        _pointerGestureRecognizer.Dragged -= OnInputDragged;
     }
 }

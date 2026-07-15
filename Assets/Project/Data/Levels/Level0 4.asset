@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72187c3e79d64c84185af96ace867963, type: 3}
-  m_Name: NewLevelDefinition
+  m_Name: Level0 4
   m_EditorClassIdentifier: 
   _width: 3
-  _height: 4
+  _height: 5
   _hasCharacter: 1
   _characterPosition: {x: 2, y: 0}
   _hasGoal: 1

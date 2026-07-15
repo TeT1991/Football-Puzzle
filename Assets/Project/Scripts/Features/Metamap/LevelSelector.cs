@@ -1,29 +1,47 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class LevelSelector : MonoBehaviour
+public class LevelSelector
 {
-    [SerializeField] private MetamapLevelMarker _testMarker;
+    private readonly Camera _camera;
+    private readonly PointerGestureRecognizer _pointerGestureRecognizer;
+    private readonly List<MetamapLevelMarker> _markers;
 
-    private Dictionary<int, MetamapLevelMarker> _markers;
+    private LayerMask _markersLayerMask;
 
-    public void Init()
+    public event Action<MetamapLevelData> LevelMarkerClicked;
+    public LevelSelector(PointerGestureRecognizer pointerGestureRecognizer, LayerMask markersLayerMask)
     {
-        
+        _camera = Camera.main;
+        _markers = new();
+
+        _pointerGestureRecognizer = pointerGestureRecognizer;
+        _markersLayerMask = markersLayerMask;
+
+        _pointerGestureRecognizer.Tapped += OnTapped;
     }
-}
 
-[Serializable]
-public readonly struct MetamapLevelData
-{
-    public readonly int _leagueIndex;
-    public readonly int _levelIndex;
-
-    public MetamapLevelData(int leagueIndex, int levelIndex)
+    public void AddLevelMarker(MetamapLevelMarker marker)
     {
-        _leagueIndex = leagueIndex;
-        _levelIndex = levelIndex;
+        _markers.Add(marker);
+    }
+
+    private void OnTapped(Vector2 screenPosition)
+    {
+        Vector3 worldPosition = _camera.ScreenToWorldPoint(screenPosition);
+
+        Collider2D hit = Physics2D.OverlapPoint(worldPosition, _markersLayerMask);
+
+        if (hit == null)
+        {
+            Debug.Log("No marker here");
+            return;
+        }
+
+        if (hit.TryGetComponent<MetamapLevelMarker>(out MetamapLevelMarker marker))
+        {
+            LevelMarkerClicked.Invoke(marker.LevelData);
+        }
     }
 }

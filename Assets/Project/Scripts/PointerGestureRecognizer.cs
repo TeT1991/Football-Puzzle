@@ -46,7 +46,7 @@ public class PointerGestureRecognizer
             DragStarted?.Invoke(_pressPosition);
         }
 
-        Dragged?.Invoke(_pressPosition);
+        Dragged?.Invoke(position);
     }
 
     private void OnReleased(Vector2 position)
@@ -54,7 +54,7 @@ public class PointerGestureRecognizer
         if(_isDragging)
         {
             _isDragging = false;
-            DragEnded?.Invoke(_pressPosition);
+            DragEnded?.Invoke(position);
         }
         else
         {

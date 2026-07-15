@@ -6,6 +6,7 @@ public class MetamapBuilder
     private readonly LeaguesCatalog _catalog;
     private readonly Transform _locationsParent;
     private readonly Transform _metamapStartPoint;
+    private readonly Transform _markersParent;
     private readonly List<MetamapLocationView> _locations;
     private readonly List<MetamapLevelMarker> _markers;
     private readonly List<Renderer> _renderers;
@@ -13,10 +14,12 @@ public class MetamapBuilder
 
     public Bounds Bounds => GetBounds();
 
-    public MetamapBuilder(Transform locationsParent, Transform metamapStartPoint)
+    public MetamapBuilder(MetamapLevelMarker metamapLevelMarker, Transform locationsParent, Transform metamapStartPoint, Transform markersParent)
     {
+        _metamapLevelMarkerPrefab = metamapLevelMarker;
         _locationsParent = locationsParent;
         _metamapStartPoint = metamapStartPoint;
+        _markersParent = markersParent;
         _locations = new();
         _renderers = new();
     }
@@ -47,12 +50,11 @@ public class MetamapBuilder
         _renderers.Add(location.Renderer);
     }
 
-    private void CreateLevelMarkers(int leagueIndex,List<LevelDefinition> levels)
+    public void CreateLevelMarker(MetamapLevelData data)
     {
-        for (int i = 0; i < levels.Count; i++)
-        {
-            
-        }
+       MetamapLevelMarker marker =  MonoBehaviour.Instantiate(_metamapLevelMarkerPrefab, _markersParent);
+       marker.Init(data);
+        _markers.Add(marker);
     }
 
     public Bounds GetBounds()
@@ -65,6 +67,11 @@ public class MetamapBuilder
         }
 
         return bounds;
+    }
+
+    private void PlaceMarkers()
+    {
+
     }
 
     private Vector3 CalculatePositionOffset(Transform entryPoint)
