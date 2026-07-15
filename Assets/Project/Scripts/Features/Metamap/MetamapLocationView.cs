@@ -9,6 +9,7 @@ public class MetamapLocationView : MonoBehaviour
     [SerializeField] private SortingGroup _sortingGroup;
     [SerializeField] private SpriteShapeController _path;
     [SerializeField] private Renderer _renderer;
+    [SerializeField] private LevelMarkerPoints _levelMarkerPoints;
 
     public Transform EntryPointPosition => _entryPointPosition;
     public Transform ExitPointPosition => _exitPointPosition;

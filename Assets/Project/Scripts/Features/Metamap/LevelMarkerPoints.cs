@@ -11,14 +11,14 @@ public class LevelMarkerPoints : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private SpriteShapeController spriteShape;
-    [SerializeField] private MetamapLocationView metamapLocationView;
+    [SerializeField] private Transform pointsParent;
 
     [Header("Markers")]
     [SerializeField, Min(1)] private int markersCount = 5;
-
     [SerializeField, Min(0f)] private float startOffset = 0f;
     [SerializeField, Min(0f)] private float endOffset = 0f;
-    [SerializeField, Min(0.01f)] private float spacing = 1f;
+    [SerializeField, Min(0f)] private float spacing = 1f;
+    [SerializeField] private string pointNamePrefix = "LevelMarkerPoint_";
 
     [Header("Gizmos")]
     [SerializeField] private float gizmoRadius = 0.25f;
@@ -26,7 +26,7 @@ public class LevelMarkerPoints : MonoBehaviour
 
     private const int SamplesPerSegment = 30;
 
-    private readonly List<Vector3> markerWorldPositions = new();
+    public IReadOnlyList<Transform> Points => GetPoints();
 
     private void OnValidate()
     {
@@ -38,61 +38,75 @@ public class LevelMarkerPoints : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-#if UNITY_EDITOR
-        DrawMarkerGizmos();
-#endif
-    }
-
-#if UNITY_EDITOR
-    public void SendPointsToMetamapLocationView()
-    {
-        RebuildMarkerPositions();
-
-        if (metamapLocationView == null)
+        if (pointsParent == null)
             return;
-
-        // Тут вставь свой метод приема координат.
-        // Например:
-        // metamapLocationView.SetLevelMarkerPoints(markerWorldPositions);
-    }
-
-    private void DrawMarkerGizmos()
-    {
-        RebuildMarkerPositions();
 
         Gizmos.color = gizmoColor;
 
-        foreach (Vector3 position in markerWorldPositions)
+        for (int i = 0; i < pointsParent.childCount; i++)
         {
-            Gizmos.DrawSphere(position, gizmoRadius);
+            Gizmos.DrawSphere(pointsParent.GetChild(i).position, gizmoRadius);
         }
     }
 
-    private void RebuildMarkerPositions()
+    public List<Transform> GetPoints()
     {
-        markerWorldPositions.Clear();
+        List<Transform> points = new();
 
-        if (spriteShape == null)
+        if (pointsParent == null)
+            return points;
+
+        for (int i = 0; i < pointsParent.childCount; i++)
+        {
+            points.Add(pointsParent.GetChild(i));
+        }
+
+        return points;
+    }
+
+#if UNITY_EDITOR
+    public void RebuildPointObjects()
+    {
+        if (spriteShape == null || pointsParent == null)
             return;
+
+        List<Vector3> worldPositions = BuildWorldPositions();
+
+        EnsurePointsCount(worldPositions.Count);
+
+        for (int i = 0; i < worldPositions.Count; i++)
+        {
+            Transform point = pointsParent.GetChild(i);
+            point.name = $"{pointNamePrefix}{i + 1:00}";
+            point.position = worldPositions[i];
+        }
+
+        EditorUtility.SetDirty(pointsParent.gameObject);
+        EditorUtility.SetDirty(gameObject);
+    }
+
+    private List<Vector3> BuildWorldPositions()
+    {
+        List<Vector3> worldPositions = new();
 
         Spline spline = spriteShape.spline;
         int pointCount = spline.GetPointCount();
 
         if (pointCount < 2)
-            return;
+            return worldPositions;
 
         float totalLength = GetPathLength(spline);
 
         if (totalLength <= 0f)
-            return;
+            return worldPositions;
 
         ClampOffsets(totalLength);
 
         if (markersCount <= 1)
         {
-            Vector3 singlePoint = GetPointOnPathByDistance(spline, startOffset);
-            markerWorldPositions.Add(spriteShape.transform.TransformPoint(singlePoint));
-            return;
+            Vector3 localPoint = GetPointOnPathByDistance(spline, startOffset);
+            worldPositions.Add(spriteShape.transform.TransformPoint(localPoint));
+            return worldPositions;
         }
 
         spacing = GetAvailableLength(totalLength) / (markersCount - 1);
@@ -100,10 +114,28 @@ public class LevelMarkerPoints : MonoBehaviour
         for (int i = 0; i < markersCount; i++)
         {
             float distance = startOffset + spacing * i;
-            Vector3 localPosition = GetPointOnPathByDistance(spline, distance);
-            Vector3 worldPosition = spriteShape.transform.TransformPoint(localPosition);
+            Vector3 localPoint = GetPointOnPathByDistance(spline, distance);
+            Vector3 worldPoint = spriteShape.transform.TransformPoint(localPoint);
 
-            markerWorldPositions.Add(worldPosition);
+            worldPositions.Add(worldPoint);
+        }
+
+        return worldPositions;
+    }
+
+    private void EnsurePointsCount(int requiredCount)
+    {
+        while (pointsParent.childCount < requiredCount)
+        {
+            GameObject point = new GameObject($"{pointNamePrefix}{pointsParent.childCount + 1:00}");
+            Undo.RegisterCreatedObjectUndo(point, "Create Level Marker Point");
+            point.transform.SetParent(pointsParent, false);
+        }
+
+        while (pointsParent.childCount > requiredCount)
+        {
+            Transform child = pointsParent.GetChild(pointsParent.childCount - 1);
+            Undo.DestroyObjectImmediate(child.gameObject);
         }
     }
 
@@ -183,7 +215,6 @@ public class LevelMarkerPoints : MonoBehaviour
             {
                 float t = s / (float)SamplesPerSegment;
                 Vector3 current = GetBezierPoint(spline, i, t);
-
                 float stepLength = Vector3.Distance(previous, current);
 
                 if (currentDistance + stepLength >= targetDistance)
@@ -232,16 +263,19 @@ public class LevelMarkerPointsEditor : Editor
         serializedObject.Update();
 
         SerializedProperty spriteShape = serializedObject.FindProperty("spriteShape");
-        SerializedProperty metamapLocationView = serializedObject.FindProperty("metamapLocationView");
+        SerializedProperty pointsParent = serializedObject.FindProperty("pointsParent");
         SerializedProperty markersCount = serializedObject.FindProperty("markersCount");
         SerializedProperty startOffset = serializedObject.FindProperty("startOffset");
         SerializedProperty endOffset = serializedObject.FindProperty("endOffset");
         SerializedProperty spacing = serializedObject.FindProperty("spacing");
+        SerializedProperty pointNamePrefix = serializedObject.FindProperty("pointNamePrefix");
         SerializedProperty gizmoRadius = serializedObject.FindProperty("gizmoRadius");
         SerializedProperty gizmoColor = serializedObject.FindProperty("gizmoColor");
 
+        EditorGUI.BeginChangeCheck();
+
         EditorGUILayout.PropertyField(spriteShape);
-        EditorGUILayout.PropertyField(metamapLocationView);
+        EditorGUILayout.PropertyField(pointsParent);
 
         EditorGUILayout.Space();
 
@@ -270,26 +304,35 @@ public class LevelMarkerPointsEditor : Editor
         }
         else
         {
+            spacing.floatValue = 0f;
             EditorGUILayout.HelpBox("Sprite Shape path is empty or not assigned.", MessageType.Info);
         }
 
         EditorGUILayout.Space();
 
+        EditorGUILayout.PropertyField(pointNamePrefix);
         EditorGUILayout.PropertyField(gizmoRadius);
         EditorGUILayout.PropertyField(gizmoColor);
 
-        EditorGUILayout.Space();
-
-        if (GUILayout.Button("Send Points To MetamapLocationView"))
-        {
-            LevelMarkerPoints levelMarkerPoints = (LevelMarkerPoints)target;
-            levelMarkerPoints.SendPointsToMetamapLocationView();
-        }
+        bool changed = EditorGUI.EndChangeCheck();
 
         serializedObject.ApplyModifiedProperties();
 
-        if (GUI.changed)
+        LevelMarkerPoints levelMarkerPoints = (LevelMarkerPoints)target;
+
+        if (changed)
+        {
+            levelMarkerPoints.RebuildPointObjects();
             SceneView.RepaintAll();
+        }
+
+        EditorGUILayout.Space();
+
+        if (GUILayout.Button("Rebuild Level Marker Points"))
+        {
+            levelMarkerPoints.RebuildPointObjects();
+            SceneView.RepaintAll();
+        }
     }
 
     private float GetPathLength(SpriteShapeController spriteShape)
