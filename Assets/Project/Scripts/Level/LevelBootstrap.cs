@@ -29,6 +29,7 @@ public class LevelBootstrap : MonoBehaviour
     private SkinLoader _skinLoader; //Нужен ли?
     private LevelResultPresenter _levelResultPresenter;
     private PointerGestureRecognizer _pointerGestureRecognizer;
+    private StarsCollector _starsCollector;
 
     private CellView[,] _cells;
 
@@ -50,13 +51,15 @@ public class LevelBootstrap : MonoBehaviour
         _cells = _gridBuilder.CreateTiles(levelData.Width, levelData.Height);
 
         _entityCreator = new(_characterParent, _entityViewPrefab);
-        EntityView character = CreateEntityView( _entityCreator, _levelDefenition.CharacterPosition);
+        EntityView character = CreateEntityView(_entityCreator, _levelDefenition.CharacterPosition);
 
         InitEntities(character);
 
         _cellSelector.Init((CellView[,])_cells.Clone(), _pointerGestureRecognizer);
 
-        _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor, _levelDefenition.GoalCoordinates);
+        _starsCollector = new();
+
+        _levelProcessor.Init(character, _cellSelector, _entityRouteRegistry, _entetiesMovementProcessor, _starsCollector, _levelDefenition.GoalCoordinates);
 
         _routesRenderer = new(_routeNodeViewPrefab, _cells);
         DrawRoutes();
@@ -126,7 +129,6 @@ public class LevelBootstrap : MonoBehaviour
         Vector2 offsetedPosition = GameUtility.ConvertCoordinatesToPosition(coordinates, width, height);
 
         return entityCreator.CreateEntity(offsetedPosition, coordinates);
-
     }
 
     private void SetMarkers()
@@ -136,10 +138,11 @@ public class LevelBootstrap : MonoBehaviour
         int height = _levelDefenition.Height;
         _goalMarkerViewPrefab.transform.position = GameUtility.ConvertCoordinatesToPosition(goal, width, height);
 
-        foreach(Vector2Int starCoordinate in _levelDefenition.StarCoordinates)
-        { 
+        foreach (Vector2Int starCoordinates in _levelDefenition.StarCoordinates)
+        {
             StarMarkerView star = Instantiate(_starMarkerViewPrefab, _markerParent);
-            star.transform.position = GameUtility.ConvertCoordinatesToPosition(starCoordinate, width, height);
+            star.transform.position = GameUtility.ConvertCoordinatesToPosition(starCoordinates, width, height);
+            _starsCollector.AddStar(star, starCoordinates);
         }
     }
 
@@ -171,5 +174,47 @@ public class EntityCreator
         entity.Init(coordinates);
 
         return entity;
+    }
+}
+
+public class StarsCollector
+{
+    private Dictionary<StarMarkerView, Vector2Int> _stars;
+
+    public event Action Collected;
+
+    public StarsCollector()
+    {
+        _stars = new();
+    }
+
+    public void AddStar(StarMarkerView starView, Vector2Int coordinates)
+    {
+        _stars.Add(starView, coordinates);
+    }
+
+    public void TryCollectStar(Vector2Int coordinates)
+    {
+        if (TryGetStarByCoordinates(coordinates, out StarMarkerView star))
+        {
+            _stars.Remove(star);
+            MonoBehaviour.Destroy(star.gameObject);
+            Collected?.Invoke();
+        }
+    }
+
+    private bool TryGetStarByCoordinates(Vector2Int coordinates, out StarMarkerView star)
+    {
+        foreach (KeyValuePair<StarMarkerView, Vector2Int> pair in _stars)
+        {
+            if (pair.Value == coordinates)
+            {
+                star = pair.Key;
+                return true;
+            }
+        }
+
+        star = null;
+        return false;
     }
 }

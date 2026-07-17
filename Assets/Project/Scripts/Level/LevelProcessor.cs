@@ -8,6 +8,7 @@ public class LevelProcessor : MonoBehaviour
 
     private EntityRouteRegistry _entityRouteRegistry;
     private EntetiesMovementProcessor _entetiesMovementProcessor;
+    private StarsCollector _starsCollector;
     private EntityView _characterView;
     private Vector2Int _goalCoordinates;
 
@@ -15,6 +16,7 @@ public class LevelProcessor : MonoBehaviour
 
     private CellView[,] _cells;
 
+    public event Action<Vector2Int> CharacterMovementStopped;
     public event Action<LevelResult> LevelEnded;
 
     private void OnDestroy()
@@ -23,12 +25,14 @@ public class LevelProcessor : MonoBehaviour
         _entetiesMovementProcessor.EntitiesMovementStopped -= OnEntitiesMovementStopped;
     }
 
-    public void Init(EntityView character, CellSelector cellSelector, EntityRouteRegistry entityRouteRegistry, EntetiesMovementProcessor entetiesMovementProcessor, Vector2Int goalCoordinates)
+    public void Init(EntityView character, CellSelector cellSelector, EntityRouteRegistry entityRouteRegistry, EntetiesMovementProcessor entetiesMovementProcessor,
+        StarsCollector starsCollector, Vector2Int goalCoordinates)
     {
         _cellSelector = cellSelector;
         _characterView = character;
         _entityRouteRegistry = entityRouteRegistry;
         _entetiesMovementProcessor = entetiesMovementProcessor;
+        _starsCollector = starsCollector;
         _goalCoordinates = goalCoordinates;
 
         _cellSelector.CellSelected += TryMoveCharacter;
@@ -48,8 +52,8 @@ public class LevelProcessor : MonoBehaviour
                 ApplyPlayerTurnState();
                 break;
 
-            case LevelState.EndLevelCheck:
-                TryEndLevel();
+            case LevelState.ResultCheck:
+                GetTurnResult();
                 break;
 
             case LevelState.Win:
@@ -76,7 +80,7 @@ public class LevelProcessor : MonoBehaviour
         _cellSelector.StartSelecting();
     }
 
-    private void TryEndLevel()
+    private void GetTurnResult()
     {
 
         if (_characterView.CurrentCoordinates == _goalCoordinates)
@@ -93,7 +97,14 @@ public class LevelProcessor : MonoBehaviour
             return;
         }
 
+        _starsCollector.TryCollectStar(_characterView.CurrentCoordinates);
+
         SetLevelState(LevelState.EntitiesMoving);
+    }
+
+    private void TryCollectStar()
+    {
+
     }
 
     private void TryMoveCharacter(CellView cellView)
@@ -102,7 +113,6 @@ public class LevelProcessor : MonoBehaviour
         {
             _cellSelector.StopSelecting();
             _entetiesMovementProcessor.StartEntetiesMovement(cellView.Coordinates);
-
         }
     }
 
@@ -131,7 +141,7 @@ public class LevelProcessor : MonoBehaviour
     private void OnEntitiesMovementStopped()
     {
         _cellSelector.ClearCurrentCell();
-        SetLevelState(LevelState.EndLevelCheck);
+        SetLevelState(LevelState.ResultCheck);
     }
 }
 
@@ -139,7 +149,7 @@ public enum LevelState
 {
     Initialization,
     EntitiesMoving,
-    EndLevelCheck,
+    ResultCheck,
     Win,
     Lose
 }
