@@ -5,6 +5,8 @@ using UnityEngine.Serialization;
 [CreateAssetMenu(menuName = "Football Puzzle/Level")]
 public class LevelDefinition : ScriptableObject
 {
+    public const int MaxStars = 3;
+
     [SerializeField, Min(1)] private int _width = 5;
     [SerializeField, Min(1)] private int _height = 5;
 
@@ -16,6 +18,7 @@ public class LevelDefinition : ScriptableObject
 
     [SerializeField] private List<Vector2Int> _enemyPositions = new();
     [SerializeField] private List<Route> _enemyRoutes = new();
+    [SerializeField] private List<Vector2Int> _starCoordinates = new();
     [FormerlySerializedAs("_testRoute")]
     [FormerlySerializedAs("_route")]
     [SerializeField] private Route _characterRoot = new();
@@ -29,12 +32,14 @@ public class LevelDefinition : ScriptableObject
     public Vector2Int GoalCoordinates => _goalCoordinates;
     public IReadOnlyList<Vector2Int> EnemyPositions => _enemyPositions;
     public IReadOnlyList<Route> EnemyRoutes => _enemyRoutes;
+    public IReadOnlyList<Vector2Int> StarCoordinates => _starCoordinates;
     public Route CharacterRoute => _characterRoot;
 
     public void UpdateData(LevelData levelData)
     {
         SetSize(levelData.Width, levelData.Height);
         ValidateGoal();
+        ValidateStars();
     }
 
     public void SetData(
@@ -50,6 +55,7 @@ public class LevelDefinition : ScriptableObject
         _characterPosition = characterPosition;
 
         ValidateGoal();
+        ValidateStars();
 
         _enemyPositions.Clear();
 
@@ -106,6 +112,72 @@ public class LevelDefinition : ScriptableObject
         }
 
         CopyEnemyRoutesFrom(source);
+        SetStars(source.StarCoordinates);
+    }
+
+    public bool HasStarAt(Vector2Int coordinates)
+    {
+        return _starCoordinates != null &&
+               _starCoordinates.Contains(coordinates);
+    }
+
+    public bool TryAddStar(Vector2Int coordinates)
+    {
+        _starCoordinates ??= new List<Vector2Int>();
+        ValidateStars();
+
+        if (IsInsideGrid(coordinates) == false)
+        {
+            return false;
+        }
+
+        if (_starCoordinates.Contains(coordinates))
+        {
+            return true;
+        }
+
+        if (_starCoordinates.Count >= MaxStars)
+        {
+            return false;
+        }
+
+        _starCoordinates.Add(coordinates);
+        return true;
+    }
+
+    public bool RemoveStar(Vector2Int coordinates)
+    {
+        if (_starCoordinates == null)
+        {
+            return false;
+        }
+
+        return _starCoordinates.Remove(coordinates);
+    }
+
+    public void SetStars(IReadOnlyList<Vector2Int> starCoordinates)
+    {
+        _starCoordinates ??= new List<Vector2Int>();
+        _starCoordinates.Clear();
+
+        if (starCoordinates == null)
+        {
+            return;
+        }
+
+        foreach (Vector2Int coordinates in starCoordinates)
+        {
+            if (_starCoordinates.Count >= MaxStars)
+            {
+                break;
+            }
+
+            if (IsInsideGrid(coordinates) &&
+                _starCoordinates.Contains(coordinates) == false)
+            {
+                _starCoordinates.Add(coordinates);
+            }
+        }
     }
 
     public bool TryGetEnemyRoute(Vector2Int enemyCoordinates, out Route enemyRoute)
@@ -200,6 +272,29 @@ public class LevelDefinition : ScriptableObject
         }
     }
 
+    private void ValidateStars()
+    {
+        _starCoordinates ??= new List<Vector2Int>();
+
+        HashSet<Vector2Int> usedPositions = new();
+
+        for (int i = _starCoordinates.Count - 1; i >= 0; i--)
+        {
+            Vector2Int coordinates = _starCoordinates[i];
+
+            if (IsInsideGrid(coordinates) == false ||
+                usedPositions.Add(coordinates) == false)
+            {
+                _starCoordinates.RemoveAt(i);
+            }
+        }
+
+        while (_starCoordinates.Count > MaxStars)
+        {
+            _starCoordinates.RemoveAt(_starCoordinates.Count - 1);
+        }
+    }
+
     private void CopyEnemyRoutesFrom(LevelDefinition source)
     {
         _enemyRoutes ??= new List<Route>();
@@ -249,6 +344,7 @@ public class LevelDefinition : ScriptableObject
         }
 
         RemoveRoutesWithoutEnemies();
+        ValidateStars();
 
         if (_characterRoot == null)
         {

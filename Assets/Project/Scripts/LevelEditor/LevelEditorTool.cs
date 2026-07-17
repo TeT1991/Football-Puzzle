@@ -97,6 +97,18 @@ public class LevelEditorTool : MonoBehaviour
         SetMode(LevelEditorMode.PlacingEnemy);
     }
 
+    public void StartPlacingStar()
+    {
+        if (EnsureGridReady() == false)
+        {
+            return;
+        }
+
+        SetLevelData();
+        EnsureLevelDefinitionExists(_levelData);
+        SetMode(LevelEditorMode.PlacingStar);
+    }
+
     public void StopPlacement()
     {
         SetMode(LevelEditorMode.None);
@@ -140,6 +152,11 @@ public class LevelEditorTool : MonoBehaviour
 
     public bool HandleSceneClick(Vector2 worldPosition)
     {
+        return HandleSceneClick(worldPosition, 0);
+    }
+
+    public bool HandleSceneClick(Vector2 worldPosition, int mouseButton)
+    {
         if (_currentMode == LevelEditorMode.None)
         {
             return false;
@@ -157,6 +174,11 @@ public class LevelEditorTool : MonoBehaviour
 
             case LevelEditorMode.PlacingEnemy:
                 return TryPlaceEnemy(cell);
+
+            case LevelEditorMode.PlacingStar:
+                return mouseButton == 1
+                    ? TryRemoveStar(cell)
+                    : TryPlaceStar(cell);
 
             default:
                 return false;
@@ -372,6 +394,43 @@ public class LevelEditorTool : MonoBehaviour
         }
 
         return true;
+    }
+
+    private bool TryPlaceStar(CellView cell)
+    {
+        if (cell == null)
+        {
+            return false;
+        }
+
+        SetLevelData();
+        EnsureLevelDefinitionExists(_levelData);
+
+        Vector2Int coordinates = cell.Coordinates;
+
+        if (_levelDefinition.HasStarAt(coordinates))
+        {
+            return false;
+        }
+
+        if (_levelDefinition.TryAddStar(coordinates) == false)
+        {
+            Debug.LogWarning(
+                $"Can't place star at {coordinates}. Maximum stars: {LevelDefinition.MaxStars}.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryRemoveStar(CellView cell)
+    {
+        if (cell == null || _levelDefinition == null)
+        {
+            return false;
+        }
+
+        return _levelDefinition.RemoveStar(cell.Coordinates);
     }
 
     private void SetupPlacedObject(
@@ -670,7 +729,8 @@ public enum LevelEditorMode
 {
     None,
     PlacingCharacter,
-    PlacingEnemy
+    PlacingEnemy,
+    PlacingStar
 }
 
 public enum LevelEditorObjectType

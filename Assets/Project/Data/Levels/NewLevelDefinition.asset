@@ -10,34 +10,39 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72187c3e79d64c84185af96ace867963, type: 3}
-  m_Name: Level0 9
+  m_Name: NewLevelDefinition
   m_EditorClassIdentifier: 
-  _width: 7
-  _height: 7
-  _hasCharacter: 0
-  _characterPosition: {x: 0, y: 0}
+  _width: 3
+  _height: 4
+  _hasCharacter: 1
+  _characterPosition: {x: 2, y: 0}
   _hasGoal: 1
   _goalCoordinates: {x: 1, y: 3}
-  _enemyPositions: []
-  _enemyRoutes: []
-  _starCoordinates: []
-  _characterRoot:
-    _routeNodes:
-    - _currentCoordinates: {x: 1, y: 0}
+  _enemyPositions:
+  - {x: 0, y: 2}
+  _enemyRoutes:
+  - _routeNodes:
+    - _currentCoordinates: {x: 0, y: 2}
       _chainedCoordinates:
-      - {x: 1, y: 1}
-      - {x: 2, y: 0}
-    - _currentCoordinates: {x: 1, y: 1}
-      _chainedCoordinates:
-      - {x: 1, y: 0}
       - {x: 1, y: 2}
     - _currentCoordinates: {x: 1, y: 2}
       _chainedCoordinates:
-      - {x: 1, y: 1}
-      - {x: 1, y: 3}
-    - _currentCoordinates: {x: 1, y: 3}
+      - {x: 0, y: 2}
+      - {x: 2, y: 2}
+    - _currentCoordinates: {x: 2, y: 2}
       _chainedCoordinates:
       - {x: 1, y: 2}
+      - {x: 2, y: 1}
+    - _currentCoordinates: {x: 2, y: 1}
+      _chainedCoordinates:
+      - {x: 2, y: 2}
+      - {x: 2, y: 0}
     - _currentCoordinates: {x: 2, y: 0}
       _chainedCoordinates:
-      - {x: 1, y: 0}
+      - {x: 2, y: 1}
+  _starCoordinates:
+  - {x: 0, y: 0}
+  - {x: 1, y: 1}
+  - {x: 1, y: 0}
+  _characterRoot:
+    _routeNodes: []

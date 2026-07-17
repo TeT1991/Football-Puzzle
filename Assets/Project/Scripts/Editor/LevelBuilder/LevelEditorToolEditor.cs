@@ -114,6 +114,14 @@ public class LevelEditorToolEditor : Editor
             MarkToolDirty();
         }
 
+        if (GUILayout.Button("Place Star"))
+        {
+            StopAllModes();
+            _tool.StartPlacingStar();
+            RepaintEditor();
+            MarkToolDirty();
+        }
+
         if (GUILayout.Button("Delete Enemy"))
         {
             StopAllModes();
@@ -275,6 +283,11 @@ public class LevelEditorToolEditor : Editor
                 DrawModeMessage(
                     "Mode: Place Enemy. Click on a free cell in Scene View. Esc - cancel.");
                 break;
+
+            case LevelEditorMode.PlacingStar:
+                DrawModeMessage(
+                    $"Mode: Place Star. LMB places, RMB removes. Max stars: {LevelDefinition.MaxStars}. Esc - cancel.");
+                break;
         }
     }
 
@@ -340,8 +353,9 @@ public class LevelEditorToolEditor : Editor
             return;
         }
 
-        if (currentEvent.type != EventType.MouseDown ||
-            currentEvent.button != 0)
+        if (currentEvent.alt ||
+            currentEvent.type != EventType.MouseDown ||
+            IsSupportedPlacementButton(currentEvent.button) == false)
         {
             return;
         }
@@ -349,13 +363,24 @@ public class LevelEditorToolEditor : Editor
         if (_sceneQuery.TryGetCellAtGuiPoint(
                 currentEvent.mousePosition,
                 out CellView cell) &&
-            _tool.HandleSceneClick(cell.transform.position))
+            _tool.HandleSceneClick(cell.transform.position, currentEvent.button))
         {
             MarkToolDirty();
             SceneView.RepaintAll();
         }
 
         currentEvent.Use();
+    }
+
+    private bool IsSupportedPlacementButton(int button)
+    {
+        if (button == 0)
+        {
+            return true;
+        }
+
+        return button == 1 &&
+               _tool.CurrentMode == LevelEditorMode.PlacingStar;
     }
 
     private void SaveCurrent()
@@ -416,6 +441,11 @@ public class LevelEditorToolEditor : Editor
     private void MarkToolDirty()
     {
         EditorUtility.SetDirty(_tool);
+
+        if (_tool.LevelDefinition != null)
+        {
+            EditorUtility.SetDirty(_tool.LevelDefinition);
+        }
 
         if (_tool.gameObject.scene.IsValid())
         {

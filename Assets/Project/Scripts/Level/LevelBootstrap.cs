@@ -10,7 +10,9 @@ public class LevelBootstrap : MonoBehaviour
     [SerializeField] private CellSelector _cellSelector;
     [SerializeField] private Transform _characterParent;
     [SerializeField] private Transform _enemiesParent;
+    [SerializeField] private Transform _markerParent;
     [SerializeField] private EntityView _entityViewPrefab;
+    [SerializeField] private StarMarkerView _starMarkerViewPrefab;
     [SerializeField] private LevelProcessor _levelProcessor;
     [SerializeField] private RouteNodeView _routeNodeViewPrefab;
     [SerializeField] private Color _characterRouteColor;
@@ -58,7 +60,7 @@ public class LevelBootstrap : MonoBehaviour
 
         _routesRenderer = new(_routeNodeViewPrefab, _cells);
         DrawRoutes();
-        SetGoalMarker();
+        SetMarkers();
 
         _levelResultPresenter = new(_levelResultView);
         _levelProcessor.LevelEnded += _levelResultPresenter.ApplyResultActions;
@@ -127,12 +129,18 @@ public class LevelBootstrap : MonoBehaviour
 
     }
 
-    private void SetGoalMarker()
+    private void SetMarkers()
     {
         Vector2Int goal = _levelDefenition.GoalCoordinates;
         int width = _levelDefenition.Width;
         int height = _levelDefenition.Height;
         _goalMarkerViewPrefab.transform.position = GameUtility.ConvertCoordinatesToPosition(goal, width, height);
+
+        foreach(Vector2Int starCoordinate in _levelDefenition.StarCoordinates)
+        { 
+            StarMarkerView star = Instantiate(_starMarkerViewPrefab, _markerParent);
+            star.transform.position = GameUtility.ConvertCoordinatesToPosition(starCoordinate, width, height);
+        }
     }
 
     private void OnDestroy()

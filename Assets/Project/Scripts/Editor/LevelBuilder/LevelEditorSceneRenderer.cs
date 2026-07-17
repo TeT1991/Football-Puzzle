@@ -12,6 +12,9 @@ internal sealed class LevelEditorSceneRenderer
     private const float GoalMarkerLineWidth = 3f;
     private const float GoalMarkerOuterRadius = 0.32f;
     private const float GoalMarkerInnerRadius = 0.14f;
+    private const float CollectibleStarLineWidth = 2.5f;
+    private const float CollectibleStarOuterRadius = 0.24f;
+    private const float CollectibleStarInnerRadius = 0.1f;
 
     private static readonly Color PlayerPathColor =
         new(0.02f, 0.18f, 0.42f, 1f);
@@ -19,6 +22,10 @@ internal sealed class LevelEditorSceneRenderer
         new(1f, 0.75f, 0.05f, 0.9f);
     private static readonly Color GoalMarkerFillColor =
         new(1f, 0.75f, 0.05f, 0.35f);
+    private static readonly Color CollectibleStarColor =
+        new(1f, 0.88f, 0.05f, 0.95f);
+    private static readonly Color CollectibleStarFillColor =
+        new(1f, 0.88f, 0.05f, 0.5f);
 
     private readonly LevelEditorTool _tool;
     private readonly LevelEditorSceneQuery _sceneQuery;
@@ -39,6 +46,7 @@ internal sealed class LevelEditorSceneRenderer
         DrawPlayerPaths(segmentOwners, showPlayerPaths);
         DrawEnemyPaths(segmentOwners);
         DrawLevelGoalMarker();
+        DrawCollectibleStarMarkers();
     }
 
     public void ApplySelectedEnemyColor(LevelEditorPlacedObject selectedEnemy)
@@ -239,14 +247,58 @@ internal sealed class LevelEditorSceneRenderer
             return;
         }
 
-        Vector3 center = cell.transform.position;
+        DrawStarShape(
+            cell.transform.position,
+            GoalMarkerOuterRadius,
+            GoalMarkerInnerRadius,
+            GoalMarkerLineWidth,
+            GoalMarkerColor,
+            GoalMarkerFillColor);
+    }
+
+    private void DrawCollectibleStarMarkers()
+    {
+        LevelDefinition definition = _tool.LevelDefinition;
+
+        if (definition == null || definition.StarCoordinates == null)
+        {
+            return;
+        }
+
+        foreach (Vector2Int coordinates in definition.StarCoordinates)
+        {
+            if (_sceneQuery.TryGetCellByCoordinates(
+                    coordinates,
+                    out CellView cell) == false)
+            {
+                continue;
+            }
+
+            DrawStarShape(
+                cell.transform.position,
+                CollectibleStarOuterRadius,
+                CollectibleStarInnerRadius,
+                CollectibleStarLineWidth,
+                CollectibleStarColor,
+                CollectibleStarFillColor);
+        }
+    }
+
+    private static void DrawStarShape(
+        Vector3 center,
+        float outerRadius,
+        float innerRadius,
+        float lineWidth,
+        Color lineColor,
+        Color fillColor)
+    {
         Vector3[] points = new Vector3[11];
 
         for (int i = 0; i < 10; i++)
         {
             float radius = i % 2 == 0
-                ? GoalMarkerOuterRadius
-                : GoalMarkerInnerRadius;
+                ? outerRadius
+                : innerRadius;
             float angle = Mathf.PI * 0.5f + i * Mathf.PI / 5f;
 
             points[i] = center + new Vector3(
@@ -261,15 +313,15 @@ internal sealed class LevelEditorSceneRenderer
         CompareFunction previousZTest = Handles.zTest;
 
         Handles.zTest = CompareFunction.Always;
-        Handles.color = GoalMarkerFillColor;
+        Handles.color = fillColor;
 
         for (int i = 0; i < 10; i++)
         {
             Handles.DrawAAConvexPolygon(center, points[i], points[i + 1]);
         }
 
-        Handles.color = GoalMarkerColor;
-        Handles.DrawAAPolyLine(GoalMarkerLineWidth, points);
+        Handles.color = lineColor;
+        Handles.DrawAAPolyLine(lineWidth, points);
 
         Handles.color = previousColor;
         Handles.zTest = previousZTest;

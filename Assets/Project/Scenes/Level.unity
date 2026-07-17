@@ -1029,6 +1029,7 @@ Transform:
   - {fileID: 99642918}
   - {fileID: 1136509670}
   - {fileID: 1770945411}
+  - {fileID: 1304802506}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1136509669
@@ -1311,6 +1312,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78466ef99cefc0d4186a02c23f5b52f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &1304802505
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1304802506}
+  m_Layer: 0
+  m_Name: Markers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1304802506
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1304802505}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 993228457}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1467901770
 GameObject:
   m_ObjectHideFlags: 0
@@ -1681,13 +1713,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _gameInput: {fileID: 321659467}
-  _levelDefenition: {fileID: 11400000, guid: faad84fffd37d6c488d39d668d9b547d, type: 2}
   _cellViewPrefab: {fileID: 8532618263547235820, guid: 78c151f8c91bf9f479e6f3d5a2f77aa4, type: 3}
   _cellsParent: {fileID: 99642918}
   _cellSelector: {fileID: 414034102}
   _characterParent: {fileID: 1136509670}
   _enemiesParent: {fileID: 1770945411}
+  _markerParent: {fileID: 1304802506}
   _entityViewPrefab: {fileID: 424806280079286302, guid: b7f25c98ff16d7a40afea7d8315a9098, type: 3}
+  _starMarkerViewPrefab: {fileID: 7049615878048783033, guid: 846db9127bba39848ae1cd68fd9ef1be, type: 3}
   _levelProcessor: {fileID: 604830695}
   _routeNodeViewPrefab: {fileID: 6989135537274516908, guid: fc7b863a136d75a499f4e240a9952206, type: 3}
   _characterRouteColor: {r: 0, g: 0.1387968, b: 1, a: 1}
