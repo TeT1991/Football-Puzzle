@@ -5,6 +5,7 @@ public class LevelResultPresenter : IDisposable
     private readonly LevelResultView _levelResultView;
     private readonly IGlobalGameStateService _globalGameStateService;
 
+    LevelCompletionData _result;
 
     public LevelResultPresenter(LevelResultView levelResultView)
     {
@@ -15,20 +16,17 @@ public class LevelResultPresenter : IDisposable
         _levelResultView.NextLevelButtonPressed += GoToNextLevel;
     }
 
-    public void ApplyResultActions(LevelResult result)
+    public void ApplyResultActions(LevelCompletionData result)
     {
+        SetResultData(result);
+        ShowResultText(result.Result);
+        ShowStars(result.Result == LevelResult.Win ? result.StarsCount : 0);
         ShowEndLevelPanel();
+    }
 
-        switch (result)
-        {
-            case LevelResult.Win:
-                ApplyWinActions();
-                break;
-
-            case LevelResult.Lose:
-                ApplyLoseActions();
-                break;
-        }
+    private void ShowResultText(LevelResult result)
+    {
+        _levelResultView.SetResultText(result);
     }
 
     private void ResetLevel()
@@ -42,19 +40,19 @@ public class LevelResultPresenter : IDisposable
         _globalGameStateService.SetState(GlobalGameState.MainMenu); //Пока вернемся в главное меню, потом сделаем переход на уровень
     }
 
-    private void ApplyWinActions()
+    private void ShowStars(int count)
     {
-        _levelResultView.ShowStars(3); //тестово, потом поменять
-    }
-
-    private void ApplyLoseActions()
-    {
-        UnityEngine.Debug.Log("Lose");
+        _levelResultView.ShowStars(count);  
     }
 
     private void ShowEndLevelPanel()
     {
         _levelResultView.gameObject.SetActive(true);
+    }
+
+    private void SetResultData(LevelCompletionData result)
+    {
+        _result = result;
     }
 
     public void Dispose()

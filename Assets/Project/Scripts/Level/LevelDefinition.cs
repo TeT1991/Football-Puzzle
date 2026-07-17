@@ -34,6 +34,7 @@ public class LevelDefinition : ScriptableObject
     public IReadOnlyList<Route> EnemyRoutes => _enemyRoutes;
     public IReadOnlyList<Vector2Int> StarCoordinates => _starCoordinates;
     public Route CharacterRoute => _characterRoot;
+    public bool HasGoalStar => _hasGoal && HasStarAt(_goalCoordinates);
 
     public void UpdateData(LevelData levelData)
     {
@@ -121,6 +122,11 @@ public class LevelDefinition : ScriptableObject
                _starCoordinates.Contains(coordinates);
     }
 
+    public bool IsGoalStar(Vector2Int coordinates)
+    {
+        return _hasGoal && _goalCoordinates == coordinates;
+    }
+
     public bool TryAddStar(Vector2Int coordinates)
     {
         _starCoordinates ??= new List<Vector2Int>();
@@ -152,6 +158,11 @@ public class LevelDefinition : ScriptableObject
             return false;
         }
 
+        if (IsGoalStar(coordinates))
+        {
+            return false;
+        }
+
         return _starCoordinates.Remove(coordinates);
     }
 
@@ -162,6 +173,7 @@ public class LevelDefinition : ScriptableObject
 
         if (starCoordinates == null)
         {
+            EnsureGoalStar();
             return;
         }
 
@@ -178,6 +190,8 @@ public class LevelDefinition : ScriptableObject
                 _starCoordinates.Add(coordinates);
             }
         }
+
+        EnsureGoalStar();
     }
 
     public bool TryGetEnemyRoute(Vector2Int enemyCoordinates, out Route enemyRoute)
@@ -241,8 +255,18 @@ public class LevelDefinition : ScriptableObject
             return;
         }
 
+        Vector2Int previousGoalCoordinates = _goalCoordinates;
+        bool hadGoal = _hasGoal;
+
         _goalCoordinates = coordinates;
         _hasGoal = true;
+
+        if (hadGoal && previousGoalCoordinates != _goalCoordinates)
+        {
+            _starCoordinates?.Remove(previousGoalCoordinates);
+        }
+
+        EnsureGoalStar();
     }
 
     public void ClearGoal()
@@ -289,10 +313,58 @@ public class LevelDefinition : ScriptableObject
             }
         }
 
+        EnsureGoalStar();
+        TrimStarsToLimit();
+    }
+
+    private void EnsureGoalStar()
+    {
+        _starCoordinates ??= new List<Vector2Int>();
+
+        if (_hasGoal == false ||
+            IsInsideGrid(_goalCoordinates) == false ||
+            _starCoordinates.Contains(_goalCoordinates))
+        {
+            return;
+        }
+
+        while (_starCoordinates.Count >= MaxStars)
+        {
+            if (RemoveLastOptionalStar() == false)
+            {
+                break;
+            }
+        }
+
+        if (_starCoordinates.Count < MaxStars)
+        {
+            _starCoordinates.Add(_goalCoordinates);
+        }
+    }
+
+    private void TrimStarsToLimit()
+    {
         while (_starCoordinates.Count > MaxStars)
         {
-            _starCoordinates.RemoveAt(_starCoordinates.Count - 1);
+            if (RemoveLastOptionalStar() == false)
+            {
+                _starCoordinates.RemoveAt(_starCoordinates.Count - 1);
+            }
         }
+    }
+
+    private bool RemoveLastOptionalStar()
+    {
+        for (int i = _starCoordinates.Count - 1; i >= 0; i--)
+        {
+            if (IsGoalStar(_starCoordinates[i]) == false)
+            {
+                _starCoordinates.RemoveAt(i);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void CopyEnemyRoutesFrom(LevelDefinition source)

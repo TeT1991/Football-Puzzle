@@ -17,7 +17,7 @@ public class LevelProcessor : MonoBehaviour
     private CellView[,] _cells;
 
     public event Action<Vector2Int> CharacterMovementStopped;
-    public event Action<LevelResult> LevelEnded;
+    public event Action<LevelCompletionData> LevelCompleted;
 
     private void OnDestroy()
     {
@@ -56,17 +56,13 @@ public class LevelProcessor : MonoBehaviour
                 GetTurnResult();
                 break;
 
-            case LevelState.Win:
-                ApplyWinState();
-                break;
-
-            case LevelState.Lose:
-                ApplyLoseState();
+            case LevelState.Finished:
+                ApplyFinishedStateResult();
                 break;
         }
     }
 
-    private void ApplyWinState()
+    private void ApplyFinishedStateResult()
     {
         Debug.Log("Win!!!");
     }
@@ -82,24 +78,34 @@ public class LevelProcessor : MonoBehaviour
 
     private void GetTurnResult()
     {
+        _starsCollector.TryCollectStar(_characterView.CurrentCoordinates);
 
+        if (TryCompleteLevel() == false)
+        {
+            return;
+        }
+
+        SetLevelState(LevelState.EntitiesMoving);
+    }
+
+    private bool TryCompleteLevel()
+    {
         if (_characterView.CurrentCoordinates == _goalCoordinates)
         {
-            SetLevelState(LevelState.Win);
-            LevelEnded?.Invoke(LevelResult.Win);
-            return;
+            SetLevelState(LevelState.Finished);
+            LevelCompletionData data = new(LevelResult.Win, _starsCollector.CollectedStarsCount);
+            LevelCompleted?.Invoke(data);
+            return false;
         }
 
         if (_entetiesMovementProcessor.IsEnemyOnCoordinates(_characterView.CurrentCoordinates))
         {
-            SetLevelState(LevelState.Lose);
-            LevelEnded?.Invoke(LevelResult.Lose);
-            return;
+            LevelCompletionData data = new(LevelResult.Lose, 0);
+            LevelCompleted?.Invoke(data);
+            return false;
         }
 
-        _starsCollector.TryCollectStar(_characterView.CurrentCoordinates);
-
-        SetLevelState(LevelState.EntitiesMoving);
+        return true; //Дублирование. Поумать как убрать.
     }
 
     private void TryCollectStar()
@@ -150,12 +156,23 @@ public enum LevelState
     Initialization,
     EntitiesMoving,
     ResultCheck,
-    Win,
-    Lose
+    Finished
 }
 
 public interface ICoroutineRunner
 {
     Coroutine Run(IEnumerator routine);
     void Stop(Coroutine coroutine);
+}
+
+public readonly struct LevelCompletionData
+{
+    public LevelResult Result { get; }
+    public int StarsCount { get; }
+
+    public LevelCompletionData(LevelResult result, int starsCount)
+    {
+        Result = result;
+        StarsCount = starsCount;
+    }
 }

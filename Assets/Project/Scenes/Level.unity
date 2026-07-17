@@ -2062,6 +2062,9 @@ MonoBehaviour:
   - {fileID: 1223537892}
   _nextLevelButton: {fileID: 375561041}
   _resetLevelButton: {fileID: 1191838702}
+  _resultText: {fileID: 1940578293}
+  _winMessage: You WIn!
+  _looseMessage: You Lose!
 --- !u!1001 &4047849778781045675
 PrefabInstance:
   m_ObjectHideFlags: 0

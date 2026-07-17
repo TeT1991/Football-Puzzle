@@ -66,7 +66,7 @@ public class LevelBootstrap : MonoBehaviour
         SetMarkers();
 
         _levelResultPresenter = new(_levelResultView);
-        _levelProcessor.LevelEnded += _levelResultPresenter.ApplyResultActions;
+        _levelProcessor.LevelCompleted += _levelResultPresenter.ApplyResultActions;
 
         _disposables = new()
         {
@@ -179,14 +179,18 @@ public class EntityCreator
 
 public class StarsCollector
 {
-    private Dictionary<StarMarkerView, Vector2Int> _stars;
+    private readonly Dictionary<StarMarkerView, Vector2Int> _stars;
+    private int _collectedStarsCount;
 
     public event Action Collected;
 
     public StarsCollector()
     {
         _stars = new();
+        _collectedStarsCount = 0;
     }
+
+    public int CollectedStarsCount => _collectedStarsCount;
 
     public void AddStar(StarMarkerView starView, Vector2Int coordinates)
     {
@@ -199,6 +203,7 @@ public class StarsCollector
         {
             _stars.Remove(star);
             MonoBehaviour.Destroy(star.gameObject);
+            _collectedStarsCount++;
             Collected?.Invoke();
         }
     }

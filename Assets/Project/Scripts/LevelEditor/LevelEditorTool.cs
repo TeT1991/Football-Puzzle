@@ -430,6 +430,13 @@ public class LevelEditorTool : MonoBehaviour
             return false;
         }
 
+        if (_levelDefinition.IsGoalStar(cell.Coordinates))
+        {
+            Debug.LogWarning(
+                $"Can't remove star at {cell.Coordinates}. Goal cell must always have a star.");
+            return false;
+        }
+
         return _levelDefinition.RemoveStar(cell.Coordinates);
     }
 
