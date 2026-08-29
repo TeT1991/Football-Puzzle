@@ -18,6 +18,7 @@ public class SaveService : ISaveService
         else
         {
             Load();
+            EnsureDefaultProgress();
         }
     }
 
@@ -92,7 +93,7 @@ public class SaveService : ISaveService
     public int GetUnlockedLevelCount(int leagueId)
     {
         LeagueProgressData progress = GetLeagueProgress(leagueId, false);
-        return progress == null ? 1 : Mathf.Max(1, progress.UnlockedLevelCount);
+        return progress == null ? 0 : Mathf.Max(0, progress.UnlockedLevelCount);
     }
 
     public bool IsLevelUnlocked(int leagueId, int levelIndex)
@@ -139,10 +140,35 @@ public class SaveService : ISaveService
         LeagueProgressData newProgress = new()
         {
             LeagueId = leagueId,
-            UnlockedLevelCount = 1
+            UnlockedLevelCount = 0
         };
 
         _saveData.LeagueProgress.Add(newProgress);
         return newProgress;
+    }
+
+    private void EnsureDefaultProgress()
+    {
+        _saveData.LeagueProgress ??= new List<LeagueProgressData>();
+
+        LeagueProgressData firstLeagueProgress = GetLeagueProgress(0, false);
+
+        if (firstLeagueProgress == null)
+        {
+            _saveData.LeagueProgress.Add(new LeagueProgressData
+            {
+                LeagueId = 0,
+                UnlockedLevelCount = 1
+            });
+
+            Save();
+            return;
+        }
+
+        if (firstLeagueProgress.UnlockedLevelCount < 1)
+        {
+            firstLeagueProgress.UnlockedLevelCount = 1;
+            Save();
+        }
     }
 }

@@ -5,6 +5,7 @@ using YG;
 public class GameBootstrap : MonoBehaviour
 {
     [SerializeField] private SkinsCatalog _skinsCatalog;
+    [SerializeField] private LeaguesCatalog _leaguesCatalog;
     [SerializeField] private GlobalStateProcessor _globalStateProcessor;
     [SerializeField] private int _initialSkinId = 0;
 
@@ -13,6 +14,7 @@ public class GameBootstrap : MonoBehaviour
     private GlobalGameStateService _gloabalGameStateService;
     private WalletService _walletService;
     private LevelSelectionService _levelSelectionService;
+    private LevelProgressionService _levelProgressionService;
 
     private void Awake()
     {
@@ -50,6 +52,9 @@ public class GameBootstrap : MonoBehaviour
 
         _levelSelectionService = new();
         ServiceLocator.Register<ILevelSelectionService>(_levelSelectionService);
+
+        _levelProgressionService = new(_saveService, _levelSelectionService, _leaguesCatalog);
+        ServiceLocator.Register<ILevelProgressionService>(_levelProgressionService);
 
         _walletService = new(_saveService);
         ServiceLocator.Register<IWalletService>(_walletService);

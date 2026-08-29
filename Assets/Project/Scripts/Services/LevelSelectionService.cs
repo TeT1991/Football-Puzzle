@@ -4,9 +4,22 @@ public class LevelSelectionService : ILevelSelectionService
     public LevelDefinition SelectedLevel { get; private set; }
     public int SelectedLevelIndex { get; private set; } = -1;
 
-    public bool TrySelect(LevelDefinition level)
+    public bool TrySelect(LeagueDefinition league, int levelIndex)
     {
-        SelectedLevel = level;
-        return true;
+        if (league == null)
+        {
+            return false;
+        }
+
+        if (levelIndex < 0 || levelIndex >= league.Levels.Count)
+        {
+            return false;
+        }
+
+        SelectedLeague = league;
+        SelectedLevelIndex = levelIndex;
+        SelectedLevel = league.Levels[levelIndex];
+
+        return SelectedLevel != null;
     }
 }

@@ -4,5 +4,5 @@ public interface ILevelSelectionService : IService
     LevelDefinition SelectedLevel { get; }
     int SelectedLevelIndex { get; }
 
-    bool TrySelect(LevelDefinition level);
+    bool TrySelect(LeagueDefinition leagueDefinition, int levelIndex);
 }

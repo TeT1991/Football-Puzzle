@@ -20,6 +20,13 @@ public class SaveData
             CurrentSkinId = 0,
             UnlockedSkins = new() { 0 },
             LeagueProgress = new()
+            {
+                new LeagueProgressData
+                {
+                    LeagueId = 0,
+                    UnlockedLevelCount = 1
+                }
+            }
         };
     }
 }

@@ -11,6 +11,7 @@ public class MainMenuBootstrap : MonoBehaviour
     [SerializeField] private MoneyPanelView _softCurrencyPanelView;
     [SerializeField] private MoneyPanelView _hardCurrencyPanelView;
     [SerializeField] private MetamapProcessor _metamapProcessor;
+    [SerializeField] private MetamapChipView _metamapChipView;
 
     [SerializeField] private LeaguesCatalog _leaguesCatalog;
 

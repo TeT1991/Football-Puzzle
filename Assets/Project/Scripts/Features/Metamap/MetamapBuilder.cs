@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class MetamapBuilder
 {
-    private readonly LeaguesCatalog _catalog;
     private readonly Transform _locationsParent;
     private readonly Transform _metamapStartPoint;
     private readonly Transform _markersParent;
@@ -14,25 +13,20 @@ public class MetamapBuilder
 
     public Bounds Bounds => GetBounds();
 
-    public MetamapBuilder(MetamapLevelMarker metamapLevelMarker, Transform locationsParent, Transform metamapStartPoint, Transform markersParent)
+    public MetamapBuilder(
+        MetamapLevelMarker metamapLevelMarker,
+        Transform locationsParent,
+        Transform metamapStartPoint,
+        Transform markersParent)
     {
         _metamapLevelMarkerPrefab = metamapLevelMarker;
         _locationsParent = locationsParent;
         _metamapStartPoint = metamapStartPoint;
         _markersParent = markersParent;
+
         _locations = new();
         _renderers = new();
         _markers = new();
-    }
-
-    public void BuildMetamap()
-    {
-        foreach (LeagueDefinition league in _catalog.Catalog)
-        {
-            CreateLocation(league.MetamapLocationView);
-
-            //CreateLevelMarkers()
-        }
     }
 
     public MetamapLocationView CreateLocation(MetamapLocationView metamapLocationView)
@@ -41,7 +35,7 @@ public class MetamapBuilder
 
         location.transform.localPosition += CalculatePositionOffset(location.EntryPointPosition);
         _locations.Add(location);
-        location.SortingGroup.sortingOrder = _locations.Count * (-1);
+        location.SortingGroup.sortingOrder = _locations.Count * -1;
 
         if (location.Renderer == null)
         {
@@ -57,9 +51,27 @@ public class MetamapBuilder
     {
         MetamapLevelMarker marker = MonoBehaviour.Instantiate(_metamapLevelMarkerPrefab, _markersParent);
         marker.Init(data);
-        marker.transform.parent = position;
+
+        marker.transform.SetParent(position, false);
         marker.transform.localPosition = Vector3.zero;
+
         _markers.Add(marker);
+    }
+
+    public bool TryGetMarker(MetamapLevelData data, out MetamapLevelMarker marker)
+    {
+        foreach (MetamapLevelMarker item in _markers)
+        {
+            if (item.LevelData.LeagueIndex == data.LeagueIndex &&
+                item.LevelData.LevelIndex == data.LevelIndex)
+            {
+                marker = item;
+                return true;
+            }
+        }
+
+        marker = null;
+        return false;
     }
 
     public Bounds GetBounds()
@@ -74,14 +86,12 @@ public class MetamapBuilder
         return bounds;
     }
 
-    private void PlaceMarkers()
-    {
-
-    }
-
     private Vector3 CalculatePositionOffset(Transform entryPoint)
     {
-        Vector3 targetPosition = _locations.Count == 0 ? _metamapStartPoint.position : _locations[^1].ExitPointPosition.position;
+        Vector3 targetPosition = _locations.Count == 0
+            ? _metamapStartPoint.position
+            : _locations[^1].ExitPointPosition.position;
+
         return targetPosition - entryPoint.position;
     }
 }

@@ -86,6 +86,7 @@ MonoBehaviour:
     - _currentCoordinates: {x: 1, y: 3}
       _chainedCoordinates:
       - {x: 1, y: 2}
+      - {x: 2, y: 3}
     - _currentCoordinates: {x: 2, y: 0}
       _chainedCoordinates:
       - {x: 1, y: 0}
@@ -94,6 +95,10 @@ MonoBehaviour:
       _chainedCoordinates:
       - {x: 1, y: 2}
       - {x: 3, y: 2}
+    - _currentCoordinates: {x: 2, y: 3}
+      _chainedCoordinates:
+      - {x: 1, y: 3}
+      - {x: 3, y: 3}
     - _currentCoordinates: {x: 3, y: 0}
       _chainedCoordinates:
       - {x: 2, y: 0}
@@ -106,3 +111,8 @@ MonoBehaviour:
       _chainedCoordinates:
       - {x: 2, y: 2}
       - {x: 3, y: 1}
+      - {x: 3, y: 3}
+    - _currentCoordinates: {x: 3, y: 3}
+      _chainedCoordinates:
+      - {x: 2, y: 3}
+      - {x: 3, y: 2}

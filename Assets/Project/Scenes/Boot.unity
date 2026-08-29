@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _skinsCatalog: {fileID: 11400000, guid: 0ed3ece57132aae45a5f6adfc1d5ff4e, type: 2}
+  _leaguesCatalog: {fileID: 11400000, guid: c26c506d0185c234c90c4c9145d84416, type: 2}
   _globalStateProcessor: {fileID: 1515917281}
   _initialSkinId: 0
 --- !u!4 &854476386

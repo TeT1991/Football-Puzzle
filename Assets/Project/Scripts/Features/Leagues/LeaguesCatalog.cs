@@ -21,4 +21,26 @@ public class LeaguesCatalog : ScriptableObject
 
         throw new System.Exception($"League id {id} not found");
     }
+
+    public bool TryGetNextLeague(LeagueDefinition currentLeague, out LeagueDefinition nextLeague)
+    {
+        for (int i = 0; i < _catalog.Count; i++)
+        {
+            if (_catalog[i] == currentLeague)
+            {
+                int nextIndex = i + 1;
+
+                if (nextIndex < _catalog.Count)
+                {
+                    nextLeague = _catalog[nextIndex];
+                    return true;
+                }
+
+                break;
+            }
+        }
+
+        nextLeague = null;
+        return false;
+    }
 }
